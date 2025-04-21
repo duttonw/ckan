@@ -128,10 +128,12 @@ class TestUser(object):
 
         assert 200 == response.status_code
         assert response.get_etag(), response
+        assert response['Cache-Control'] == 'no-cache, no-store, max-age=0'
+        assert response.cache_control.to_header() == 'no-cache, no-store, max-age=0'
         assert response.cache_control.private is None, response
         assert response.cache_control.no_cache is True, response
         assert response.cache_control.no_store is True, response
-        assert response.cache_control.must_revalidate is None, response
+        assert response.cache_control.must_revalidate is False, response
         assert response.cache_control.max_age == 0, response
         assert response.cache_control.public is False, response
 

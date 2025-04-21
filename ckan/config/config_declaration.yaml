@@ -409,17 +409,41 @@ groups:
           causes problems.
 
       - key: ckan.cache_expires
-        default: 300 # 5min before revalidate
+        default: 30
         type: int
         example: 2592000
-        description: This sets ``Cache-Control`` header's max-age value.
+        description: |
+          This sets ``Cache-Control`` header's max-age value on public cache.
+          30seconds before revalidate with shared cache
 
       - key: ckan.shared_cache_expires
-        default: 3600 # 1 hour before shared cache revalidates
+        default: 60
         type: int
         example: 7200
         description: |
-          This sets ``Cache-Control`` header's s-maxage value.
+          This sets ``Cache-Control`` header's s-maxage value on public cache.
+          60 = 1 minute before shared cache revalidates
+
+      - key: ckan.stale-while-revalidate
+        default: 3600
+        type: int
+        example: 3600
+        description: |
+          This sets ``Cache-Control`` header's stale-while-revalidate value on public cache.
+          3600 = 1 hour to serve stale content while being background revalidated
+          users will continue to receive stale data until refresh call is returned
+          limiting requests to one per edge cache instead of all users when shared
+          cache is stale/expired.
+          Set to 0 to disallow stale cache server on requests.
+
+      - key: ckan.cache_stale-if-error
+        default: 86400
+        type: int
+        example: 7200
+        description: |
+          This sets ``Cache-Control`` header's stale-if-error value on public cache.
+          86400 = 1 day if origin server throws 5xx error.
+          Set to 0 to disallow stale cache server on 5xx errors.
 
       - key: ckan.private_cache_expires
         type: int
@@ -443,9 +467,19 @@ groups:
         default: true
         example: "true"
         description: |
-          When this is set to true and ``__no_cache__`` is set on requests,
+          When this is set to true and cache type requested is private,
           then ``Cache-control: private`` header will be added,
-          else ``Cache-Control: no-cache no-store must-revalidate max-age=0``, ``Expires: 0``
+          else ``Cache-Control: no-cache max-age=0``
+          will be set on all requests except for sensitive responses where no-store
+          will also be set.
+
+      - key: ckan.cache_no_transform
+        type: bool
+        default: false
+        example: "true"
+        description: |
+          If the HTTP response is not to be manipulated, Default: False
+          Adds to ``Cache-control`` ``no-transform``.
 
       - key: ckan.cache_etags
         type: bool

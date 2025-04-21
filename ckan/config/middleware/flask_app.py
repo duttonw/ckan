@@ -601,7 +601,7 @@ def _setup_webassets(app: CKANApp):
     webassets_folder = get_webassets_path()
 
     def webassets(path: str) -> Response:
-        g.cacheType = CacheType.OVERRIDDEN
+        h.set_cache_level(CacheType.OVERRIDDEN)
 
         cache_expire = config.get(u'ckan.cache_expires', 0)
         if cache_expire == 0:

@@ -31,7 +31,7 @@ import dominate.tags as dom_tags
 from dominate.util import raw as raw_dom_tags
 from markdown import markdown
 from bleach import clean as bleach_clean, ALLOWED_TAGS, ALLOWED_ATTRIBUTES
-from ckan.common import asbool, config, current_user
+from ckan.common import asbool, config, current_user, CacheType
 from flask import flash, has_request_context, current_app
 from flask import get_flashed_messages as _flask_get_flashed_messages
 from flask import redirect as _flask_redirect
@@ -1209,8 +1209,9 @@ def get_param_int(name: str, default: int = 10) -> int:
         return default
 
 
-def _url_with_params(url: str, params: Optional[Iterable[tuple[str,
-                                                               Any]]]) -> str:
+def _url_with_params(url: str,
+                     params: Optional[
+                         Iterable[tuple[str, Any]]]) -> str:
     if not params:
         return url
     params = [(k, v.encode('utf-8') if isinstance(v, str) else str(v))
@@ -2884,3 +2885,54 @@ def make_login_url(
 @core_helper
 def csrf_input():
     return snippet('snippets/csrf_input.html')
+
+
+@core_helper
+def cache_level():
+    return getattr(g, 'CacheType', None)
+
+
+@core_helper
+def set_cache_level(cache_type: 'CacheType|str',
+                    force: bool = False) -> 'CacheType|None':
+    """Allow setting the cache without downgrading cache unless forced
+    force: Use with caution for example, downgrading cache to public
+    when logged in can have major side effects"""
+    if isinstance(cache_type, str):
+        try:
+            cache_type = CacheType(cache_type)
+        except ValueError:
+            log.warning("Invalid Cache Type passed in, received %r. Ignoring",
+                        cache_type)
+            return None
+
+    currentCacheType = cache_level()
+
+    if currentCacheType and cache_type:
+        if CacheType.can_override(currentCacheType, cache_type) or force:
+            g.cacheType = cache_type
+    else:
+        g.CacheType = cache_type
+    return g.CacheType
+
+
+@core_helper
+def set_etag_suffix(etag_suffix: str) -> None:
+    """ Adds additional etag uniqueness, can be called multiple times"""
+    current_value = getattr(g, 'etagAppend', "")
+    g.etagAppend = current_value + etag_suffix
+
+
+@core_helper
+def set_etag_replace(etag_replace: str) -> None:
+    """ Replace etag with this value, disable etag generation
+    will not append set suffix's or prefix's"""
+    g.etagReplace = etag_replace
+
+
+@core_helper
+def set_etag_prefix(etag_modified_time: str) -> None:
+    """ Set mtime value on etag instead of current datetime on request
+    very useful if you want to key a page to db last modified where no
+    other plugins provide dynamic content for non-logged in/public users"""
+    g.etagMTime = etag_modified_time
