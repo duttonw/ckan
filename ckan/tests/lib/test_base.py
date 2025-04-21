@@ -511,8 +511,6 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
         pytest.fail("Not CKAN cookie found in Set-Cookie header")
 
 
-
-
 @pytest.mark.ckan_config('ckan.cache_enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache_private_enabled', 'false')
 def test_cache_control_while_logged_in_private_cache_disable(app):

@@ -127,7 +127,7 @@ def _allow_caching(cache_force: Optional[bool] = None):
     # Tests etc.
     elif session.get("_user_id"):
         h.set_cache_level(CacheType.PRIVATE)
-    elif session
+
     # Don't cache if based on a non-cachable template used in this.
     if request.environ.get('__no_cache__'):
         # Depreciated, use h.set_cache_level(CacheType.NO_CACHE)

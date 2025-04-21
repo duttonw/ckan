@@ -118,8 +118,9 @@ def set_cache_control_headers_for_response(response: Response) -> Response:
             # Only make private, don't override other levels
             cacheType = CacheType.PRIVATE
 
-    log.error(session.accessed)
-    if (session.accessed and len(dict(session).keys()) > 0
+    log.error("session accessed: %r modified: %r, keys: %r",
+              session.accessed, session.modified, len(session.keys()))
+    if (session.accessed and len(session.keys()) > 0
        and cacheType != CacheType.SENSITIVE):
         # If we have session data, it can't be public
         # Note: due to CSRF protection being 'session' based. All html pages will
@@ -130,7 +131,8 @@ def set_cache_control_headers_for_response(response: Response) -> Response:
     if is_set_cookie_header or session.modified:
         # Note, flask_session occurs after ckan cache controls. So must use
         # session.modified flag for swap outs
-        # If you use redis session, then the cookie only changes on first access/login/logout.
+        # If you use redis session, then the cookie only changes on
+        # first access/login/logout.
         cacheType = CacheType.SENSITIVE
 
     # the must-understand directive is recommended to be used in conjunction
