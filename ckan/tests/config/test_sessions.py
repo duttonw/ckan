@@ -105,7 +105,7 @@ class TestSessionTypes:
 
     @pytest.mark.usefixtures("clean_redis")
     @pytest.mark.ckan_config("SESSION_TYPE", "redis")
-    def test_redis_storage_no_session(self, app, ckan_config, monkeypatch):
+    def test_redis_storage_no_session(self, app, monkeypatch):
         """Redis session interface creates a record in redis upon request.
         """
         redis = connect_to_redis()

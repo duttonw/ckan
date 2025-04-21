@@ -430,13 +430,6 @@ def ckan_after_request(response: Response) -> Response:
     url = request.environ['PATH_INFO']
     status_code = response.status_code
 
-    if current_user.is_anonymous and not session.modified:
-        # we don't want to create anon sessions as
-        # we always access but may never add data.
-        log.error("DEBUG: removing session for anonymous user")
-        # Not modified, not accessed.
-        session.accessed = False
-
     log.info(' %s %s render time %.3f seconds', status_code, url, r_time)
 
     return response

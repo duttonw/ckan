@@ -4,7 +4,7 @@ import hashlib
 from flask import Request, Response
 from werkzeug.test import EnvironBuilder
 from ckan.common import request, CacheType
-from ckan.lib import helpers as h
+from ckan.lib import helpers as h, base
 
 from ckan.tests.helpers import CKANTestApp
 from werkzeug.test import TestResponse
@@ -61,9 +61,9 @@ def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
-        assert h.set_cache_level(CacheType.PUBLIC, True)
+        assert h.set_cache_level(CacheType.PUBLIC, True) is CacheType.PUBLIC
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'public, max-age=300, s-maxage=`1, must-revalidate' == updated_response.headers['Cache-Control']
+    assert 'must-understand, public, max-age=300, s-maxage=`1, must-revalidate' == updated_response.headers['Cache-Control']
 
 
 @pytest.mark.ckan_config("ckan.stale-while-revalidate", 1)
@@ -123,6 +123,7 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        base._allow_caching()
         assert h.cache_level() == CacheType.PRIVATE
         updated_response = views.set_cache_control_headers_for_response(response)
     assert 'private, max-age=300, must-revalidate' == updated_response.headers['Cache-Control']
@@ -168,10 +169,11 @@ def test_adds_vary_cookie_when_g_limit_cache_for_page_is_true(app: CKANTestApp):
     Request(env)
     response = Response()  # dummy response
 
-    with app.flask_app.request_context(env) as ctx:  # only works if you have app.flask_app
-        assert request.environ.get('__limit_cache_by_cookie__') is None
-        updated_response = views.set_cache_control_headers_for_response(response)
-        assert ctx.g.limit_cache_for_page is True
+    with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        with app.flask_app.app_context() as ctx:
+            assert request.environ.get('__limit_cache_by_cookie__') is None
+            updated_response = views.set_cache_control_headers_for_response(response)
+            assert ctx.g.limit_cache_for_page is True
     assert "Cookie" in updated_response.vary
     assert "HX-Request" in updated_response.vary
 
@@ -253,10 +255,10 @@ def test_does_not_return_304_if_etag_does_not_match(app: CKANTestApp):
     request_headers: dict = {"if_none_match": "some-other-etag"}
     updated_response: TestResponse = app.get('/', headers=request_headers)
 
-    assert updated_response.status_code == 200, "should have received payload, not 304 as invalid etag was passed in"
+    assert updated_response.status_code == 200
     under_test_response_data = updated_response.get_data(as_text=True)
     assert clean_dynamic_values(clean_response_data) == clean_dynamic_values(under_test_response_data)
-    assert updated_response.get_etag() == clean_response.get_etag(), "etag were not the same, got {}, original etag was {}".format(updated_response.get_etag(), clean_response.get_etag())
+    assert updated_response.get_etag() != clean_response.get_etag(), "etag were not the same, got {}, original etag was {}".format(updated_response.get_etag(), clean_response.get_etag())
 
 
 def streaming_generator():

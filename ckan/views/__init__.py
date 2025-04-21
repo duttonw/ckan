@@ -88,8 +88,8 @@ def set_etag_for_response(response: Response) -> Response:
 
 
 def set_cache_control_headers_for_response(response: Response) -> Response:
-    cacheType = getattr(g, 'cacheType', None)
-
+    cacheType = getattr(g, 'cache_type', None)
+    # log.debug("set_cache_control_headers_for_response %r", cacheType)
     # Start Request overrides https://http.dev/cache-control
     # This is very useful for developer tools testing
     if 'Cache-Control' in request.headers:
@@ -118,17 +118,27 @@ def set_cache_control_headers_for_response(response: Response) -> Response:
             # Only make private, don't override other levels
             cacheType = CacheType.PRIVATE
 
+    log.error(session.accessed)
+    if (session.accessed and len(dict(session).keys()) > 0
+       and cacheType != CacheType.SENSITIVE):
+        # If we have session data, it can't be public
+        # Note: due to CSRF protection being 'session' based. All html pages will
+        # now be classified non-public due to needing to vary on at least cookie.
+        cacheType = CacheType.PRIVATE
     # If cookie's is changing, don't allow it to be cached/stored
     is_set_cookie_header = u'Set-Cookie' in response.headers
     if is_set_cookie_header or session.modified:
         # Note, flask_session occurs after ckan cache controls. So must use
         # session.modified flag for swap outs
+        # If you use redis session, then the cookie only changes on first access/login/logout.
         cacheType = CacheType.SENSITIVE
 
     # the must-understand directive is recommended to be used in conjunction
     # with no-store in the case that said directive is unsupported by a cache
     # and thus ignored.
     response.cache_control.must_understand = True
+
+    log.error("chacheType = %r", cacheType)
 
     if cacheType == CacheType.PUBLIC:
         response.cache_control.public = True

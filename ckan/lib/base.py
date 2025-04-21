@@ -118,7 +118,7 @@ def _allow_caching(cache_force: Optional[bool] = None):
         g.limit_cache_for_page = True
 
     if h.cache_level():
-        log.debug("Cache Level found: %r, skipping default cache config", h.cache_level)
+        log.error("Cache Level found: %r, skipping default cache config", h.cache_level)
         return
 
     # Do not allow caching of pages for logged in users/flash messages etc.
@@ -127,7 +127,7 @@ def _allow_caching(cache_force: Optional[bool] = None):
     # Tests etc.
     elif session.get("_user_id"):
         h.set_cache_level(CacheType.PRIVATE)
-
+    elif session
     # Don't cache if based on a non-cachable template used in this.
     if request.environ.get('__no_cache__'):
         # Depreciated, use h.set_cache_level(CacheType.NO_CACHE)
@@ -145,6 +145,10 @@ def _allow_caching(cache_force: Optional[bool] = None):
     if (h.cache_level() == CacheType.PRIVATE
        and config.get('ckan.cache_private_enabled')):
         h.set_cache_level(CacheType.NO_CACHE)
+
+    if h.cache_level() is None:
+        log.error("Cache Level not set")
+        h.set_cache_level(CacheType.PUBLIC)
 
 
 def _is_valid_session_cookie_data() -> bool:

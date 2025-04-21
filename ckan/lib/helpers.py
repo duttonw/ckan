@@ -2889,7 +2889,7 @@ def csrf_input():
 
 @core_helper
 def cache_level():
-    return getattr(g, 'CacheType', None)
+    return getattr(g, 'cache_type', None)
 
 
 @core_helper
@@ -2910,10 +2910,11 @@ def set_cache_level(cache_type: 'CacheType|str',
 
     if currentCacheType and cache_type:
         if CacheType.can_override(currentCacheType, cache_type) or force:
-            g.cacheType = cache_type
+            g.cache_type = cache_type
     else:
-        g.CacheType = cache_type
-    return g.CacheType
+        g.cache_type = cache_type
+    # log.debug('cacheType set to %r', cache_type)
+    return g.cache_type
 
 
 @core_helper

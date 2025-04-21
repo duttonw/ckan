@@ -5,6 +5,7 @@ import pytest
 
 import ckan.tests.factories as factories
 import ckan.lib.helpers as h
+from ckan.tests.helpers import CKANTestApp
 
 
 @pytest.mark.ckan_config("debug", True)
@@ -488,7 +489,7 @@ def test_cache_control_max_age_when_cache_enabled(app):
 
 @pytest.mark.ckan_config('ckan.cache_enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache_private_enabled', 'true')
-def test_cache_control_while_logged_in(app):
+def test_cache_control_while_logged_in(app: CKANTestApp):
     user = factories.User(password="correct123")
     identity = {"login": user["name"], "password": "correct123"}
     request_headers = {}
@@ -503,12 +504,13 @@ def test_cache_control_while_logged_in(app):
     if match:
         cookie_value = match.group(0)  # Includes 'ckan=...' part
         headers = {"Cookie": cookie_value}
-        response_headers = app.get(h.url_for("user.dashboard"), headers=headers)
+        response = app.get(h.url_for("user.dashboard"), headers=headers)
+        assert 'Cache-Control' in response.headers
+        assert response.headers['Cache-Control'] == 'private, max-age=60, must-revalidate'
     else:
         pytest.fail("Not CKAN cookie found in Set-Cookie header")
 
-    assert 'Cache-Control' in response_headers
-    assert response_headers['Cache-Control'] == 'private, max-age=60, must-revalidate'
+
 
 
 @pytest.mark.ckan_config('ckan.cache_enabled', 'true')

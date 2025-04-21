@@ -454,7 +454,7 @@ groups:
 
       - key: ckan.cache_enabled
         type: bool
-        default: true
+        default: True
         example: "true"
         description: |
           This enables cache control headers on all requests. If the user is

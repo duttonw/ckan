@@ -16,6 +16,8 @@ from enum import Enum
 from typing import (
     Any, Optional, TYPE_CHECKING,
     TypeVar, cast, overload, Union)
+
+from flask.sessions import SessionMixin
 from typing_extensions import Literal
 
 import flask
@@ -31,7 +33,6 @@ import simplejson as json  # type: ignore # noqa
 import ckan.lib.maintain as maintain
 from ckan.config.declaration import Declaration
 from ckan.types import Request
-
 
 if TYPE_CHECKING:
     MutableMapping = MutableMapping[str, Any]
@@ -226,7 +227,7 @@ def _get_c():  # pyright: ignore[reportUnusedFunction]
     return _get_g()
 
 
-def _get_session():
+def _get_session() -> SessionMixin:
     return flask.session
 
 
