@@ -9,15 +9,15 @@ from ckan.tests.helpers import CKANTestApp
 
 
 @pytest.mark.ckan_config("debug", True)
-def test_comment_present_if_debug_true(app):
+def test_comment_present_if_debug_true(app: CKANTestApp):
     response = app.get("/")
-    assert "<!-- Snippet " in response
+    assert "<!-- Snippet " in response, response.get_data(True)
 
 
 @pytest.mark.ckan_config("debug", False)
 def test_comment_absent_if_debug_false(app):
     response = app.get("/")
-    assert "<!-- Snippet " not in response
+    assert "<!-- Snippet " not in response, response.get_data(True)
 
 
 def test_apitoken_missing(app):
@@ -463,7 +463,7 @@ def test_cache_control_in_when_public_cache_is_not_enabled(app):
     response = app.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers
-    assert response.headers['Cache-Control'] == 'private, max-age=60, must-revalidate'
+    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
 
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
@@ -506,7 +506,7 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
 
     headers = setSessionCookieHeader(response)
 
-    response = app.get(h.url_for("user.dashboard"), headers=headers)
+    response = app.get(h.url_for("dashboard.index"), headers=headers)
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
 
@@ -524,6 +524,7 @@ def setSessionCookieHeader(response):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'false')
+@pytest.mark.ckan_config('WTF_CSRF_ENABLED', False)  # disable csrf so sessions are not auto created
 def test_cache_control_while_logged_in_private_cache_disable(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)

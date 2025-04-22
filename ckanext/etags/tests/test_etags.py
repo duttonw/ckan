@@ -147,7 +147,7 @@ class test_etag_plugins():
             pytest.fail("Not CKAN cookie found in Set-Cookie header")
 
         response: TestResponse = app.get(
-            url_for("user.dashboard"),
+            url_for("dashboard.index"),
             headers=headers
         )
 

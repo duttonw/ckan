@@ -28,6 +28,7 @@ def test_sets_cache_control_headers_default(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        h.set_cache_level(CacheType.PUBLIC)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=300, s-maxage=3600, must-revalidate' ==
             updated_response.headers['Cache-Control'])
@@ -45,7 +46,8 @@ def test_sets_cache_control_headers_cache_expires(app: CKANTestApp):
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'public, max-age=300, s-maxage=3600' == updated_response.headers['Cache-Control']
+    assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400'
+            == updated_response.headers['Cache-Control'])
 
 
 @pytest.mark.ckan_config("ckan.cache.shared.expires", 1)
@@ -64,7 +66,7 @@ def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
             == updated_response.headers['Cache-Control'])
 
 
-@pytest.mark.ckan_config("ckan.stale-while-revalidate", 1)
+@pytest.mark.ckan_config("ckan.cache.stale_while_revalidates", 1)
 @pytest.mark.ckan_config("ckan.cache.stale_if_error", 2)
 def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
@@ -77,7 +79,7 @@ def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         assert h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=1, cache_stale-if-error=2'
+    assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=1, stale-if-error=2'
             == updated_response.headers['Cache-Control'])
 
 
@@ -255,7 +257,7 @@ def test_returns_304_if_etag_matches(app: CKANTestApp):
     with app.flask_app.app_context() as ctx:
         request_headers["if_none_match"] = response.headers["Etag"]
         # Due to hash system always different, we fix it for this test
-        # ctx.g.etag_replace = response.headers["Etag"]
+        ctx.g.etag_replace = response.headers["Etag"]
         updated_response: TestResponse = app.get('/', headers=request_headers)
 
         assert updated_response.status_code == 304, "original Etag was {}, second call etag was {}".format(response.headers["Etag"], updated_response.headers["Etag"])
