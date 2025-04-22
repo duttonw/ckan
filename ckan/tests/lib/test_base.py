@@ -1,5 +1,7 @@
 # encoding: utf-8
 import re
+from unittest.mock import MagicMock
+from ckan.config.middleware import flask_app
 
 import pytest
 
@@ -445,6 +447,7 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'false')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
 def test_cache_control_in_when_public_cache_is_not_enabled(app):
+    flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     request_headers = {}
     response = app.get('/', headers=request_headers)
     request_headers = setSessionCookieHeader(response)
@@ -455,8 +458,8 @@ def test_cache_control_in_when_public_cache_is_not_enabled(app):
 
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
-@pytest.mark.ckan_config('WTF_CSRF_ENABLED', False)
 def test_cache_control_when_cache_enabled(app):
+    flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     request_headers = {}
     response = app.get('/', headers=request_headers)
     response_headers = dict(response.headers)
@@ -467,8 +470,8 @@ def test_cache_control_when_cache_enabled(app):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.expires', 300)
-@pytest.mark.ckan_config('WTF_CSRF_ENABLED', False)
-def test_cache_control_max_age_when_cache_enabled(app):
+def test_cache_control_max_age_when_cache_enabled(app: CKANTestApp):
+    flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     request_headers = {}
     response = app.get('/', headers=request_headers)
 
@@ -494,7 +497,7 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
 
     headers = setSessionCookieHeader(response)
 
-    response = app.get(h.url_for("dashboard.index"), headers=headers)
+    response = app.get(h.url_for("activity.dashboard"), headers=headers)
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
 
@@ -512,8 +515,8 @@ def setSessionCookieHeader(response):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'false')
-@pytest.mark.ckan_config('WTF_CSRF_ENABLED', False)  # disable csrf so sessions are not auto created
 def test_cache_control_while_logged_in_private_cache_disable(app):
+    flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     request_headers = {}
     response = app.get('/', headers=request_headers)
 

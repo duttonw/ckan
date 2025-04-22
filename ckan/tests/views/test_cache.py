@@ -1,5 +1,9 @@
 import pytest
 import re
+
+from unittest.mock import MagicMock
+from ckan.config.middleware import flask_app
+
 from flask import Request, Response
 from werkzeug.test import EnvironBuilder
 from ckan.common import request, CacheType
@@ -29,7 +33,7 @@ def test_sets_cache_control_headers_default(app: CKANTestApp):
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         h.set_cache_level(CacheType.PUBLIC)
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert ('must-understand, public, max-age=300, s-maxage=3600, must-revalidate' ==
+    assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400' ==
             updated_response.headers['Cache-Control'])
 
 
@@ -127,7 +131,7 @@ def setSessionCookieHeader(response):
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
-
+    flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     response = app.get(h.url_for("/"))
     headers = setSessionCookieHeader(response)
 
@@ -147,7 +151,7 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
 @pytest.mark.ckan_config("ckan.cache.private.enabled", False)
 def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
-
+    flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     builder = EnvironBuilder(path='/', method='GET', headers={})
     env = builder.get_environ()
     Request(env)
@@ -255,7 +259,8 @@ def test_returns_304_if_etag_matches(app: CKANTestApp):
     assert response.headers["Etag"] is not None, response.headers
 
     with app.flask_app.app_context() as ctx:
-        ctx.g.etag_modified_time = "fixed"
+        ctx.g.etag_modified_time = "fixed"  # expecting fixed-11683-3145776
+        request_headers["if_none_match"] = response.headers["Etag"]
         updated_response: TestResponse = app.get('/', headers=request_headers)
 
         assert updated_response.status_code == 304, "original Etag was {}, second call etag was {}".format(response.headers["Etag"], updated_response.headers["Etag"])
