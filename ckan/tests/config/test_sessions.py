@@ -96,7 +96,7 @@ class TestSessionTypes:
 
         assert not redis.keys("*")
         # A page that sets session
-        response = app.post("/user/login")
+        response = app.get("/user/login")
 
         cookie = re.match(r'ckan=([^;]+)', response.headers['set-cookie'])
         assert cookie
@@ -112,7 +112,7 @@ class TestSessionTypes:
 
         assert not redis.keys("*")
         # A page that sets session
-        response = app.post("/")
+        response = app.get("/")
         assert 'Set-Cookie' not in response.headers
         assert not redis.keys("*")
 

@@ -459,28 +459,32 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
 def test_cache_control_in_when_public_cache_is_not_enabled(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)
-    response_headers = dict(response.headers)
+    request_headers = setSessionCookieHeader(response)
+    response = app.get('/', headers=request_headers)
 
-    assert 'Cache-Control' in response_headers
-    assert response_headers['Cache-Control'] == 'private, max-age=60, must-revalidate'
+    assert 'Cache-Control' in response.headers
+    assert response.headers['Cache-Control'] == 'private, max-age=60, must-revalidate'
 
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
+@pytest.mark.ckan_config('WTF_CSRF_ENABLED', False)
 def test_cache_control_when_cache_enabled(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)
     response_headers = dict(response.headers)
 
     assert 'Cache-Control' in response_headers
-    assert 'public' in response_headers['Cache-Control']
+    assert 'public' == response_headers['Cache-Control']
 
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.expires', 300)
+@pytest.mark.ckan_config('WTF_CSRF_ENABLED', False)
 def test_cache_control_max_age_when_cache_enabled(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)
-    response_headers = dict(response.headers)
+
+    response_headers = response.headers
 
     assert 'Cache-Control' in response_headers
     assert 'public' in response_headers['Cache-Control']
@@ -498,17 +502,24 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
         h.url_for("user.login"), data=identity, headers=request_headers
     )
     assert 'Cache-Control' in response.headers
-    assert response.headers['Cache-Control'] == 'no-store, no-cache, max-age=0'
+    assert response.headers['Cache-Control'] == 'must-understand, no-cache, max-age=0, no-store'
 
+    headers = setSessionCookieHeader(response)
+
+    response = app.get(h.url_for("user.dashboard"), headers=headers)
+    assert 'Cache-Control' in response.headers
+    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
+
+
+def setSessionCookieHeader(response):
     match = re.search(r'ckan=([^;]+)', response.headers['set-cookie'])
     if match:
         cookie_value = match.group(0)  # Includes 'ckan=...' part
         headers = {"Cookie": cookie_value}
-        response = app.get(h.url_for("user.dashboard"), headers=headers)
-        assert 'Cache-Control' in response.headers
-        assert response.headers['Cache-Control'] == 'private, max-age=60, must-revalidate'
+
     else:
         pytest.fail("Not CKAN cookie found in Set-Cookie header")
+    return headers
 
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
@@ -516,11 +527,10 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
 def test_cache_control_while_logged_in_private_cache_disable(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)
-    response_headers = dict(response.headers)
 
-    assert 'Cache-Control' in response_headers
-    assert 'public' in response_headers['Cache-Control']
-    assert 'max-age=300' in response_headers['Cache-Control']
+    assert 'Cache-Control' in response.headers
+    assert 'public' in response.headers['Cache-Control']
+    assert 'max-age=300' in response.headers['Cache-Control']
 
     user = factories.User(password="correct123")
     identity = {"login": user["name"], "password": "correct123"}

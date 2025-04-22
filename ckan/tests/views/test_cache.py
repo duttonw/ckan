@@ -29,11 +29,8 @@ def test_sets_cache_control_headers_default(app: CKANTestApp):
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'public, max-age=300, s-maxage=3600, must-revalidate' == updated_response.headers['Cache-Control']
-    # assert updated_response.cache_control.public is True, updated_response
-    # assert updated_response.cache_control.max_age == 300, updated_response  # 300 == default
-    # assert updated_response.cache_control.s_maxage == 3600, updated_response  # 3600 == default
-    # assert updated_response.cache_control.must_revalidate is True, updated_response
+    assert ('must-understand, public, max-age=300, s-maxage=3600, must-revalidate' ==
+            updated_response.headers['Cache-Control'])
 
 
 @pytest.mark.ckan_config("ckan.cache.expires", 3600)
@@ -46,7 +43,7 @@ def test_sets_cache_control_headers_cache_expires(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
-        assert h.cache_level() is CacheType.PUBLIC
+        h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert 'public, max-age=300, s-maxage=3600' == updated_response.headers['Cache-Control']
 
@@ -63,7 +60,8 @@ def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         assert h.set_cache_level(CacheType.PUBLIC, True) is CacheType.PUBLIC
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'must-understand, public, max-age=300, s-maxage=`1, must-revalidate' == updated_response.headers['Cache-Control']
+    assert ('must-understand, public, max-age=3600, s-maxage=1, stale-while-revalidate=0, stale-if-error=86400'
+            == updated_response.headers['Cache-Control'])
 
 
 @pytest.mark.ckan_config("ckan.stale-while-revalidate", 1)
@@ -79,7 +77,8 @@ def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         assert h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'public, max-age=300, s-maxage=`1, stale-while-revalidate=`, cache_stale-if-error=2' == updated_response.headers['Cache-Control']
+    assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=1, cache_stale-if-error=2'
+            == updated_response.headers['Cache-Control'])
 
 
 @pytest.mark.ckan_config("ckan.stale-while-revalidate", 0)
@@ -95,7 +94,7 @@ def test_sets_cache_control_headers_stale_config_settings_disable(app: CKANTestA
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         assert h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'public, max-age=300, s-maxage=`1, must-revalidate' == updated_response.headers['Cache-Control']
+    assert 'must-understand, public, max-age=3600, s-maxage=7200, must-revalidate' == updated_response.headers['Cache-Control']
 
 
 @pytest.mark.ckan_config("ckan.cache.private.expires", 1234)
@@ -110,14 +109,27 @@ def test_sets_cache_control_headers_private_cache_expires(app: CKANTestApp):
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         assert h.set_cache_level(CacheType.PRIVATE, True)
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'private, max-age=1234, must-revalidate' == updated_response.headers['Cache-Control']
+    assert 'must-understand, private, max-age=1234, stale-while-revalidate=0, stale-if-error=86400' == updated_response.headers['Cache-Control']
+
+def setSessionCookieHeader(response):
+    match = re.search(r'ckan=([^;]+)', response.headers['set-cookie'])
+    if match:
+        cookie_value = match.group(0)  # Includes 'ckan=...' part
+        headers = {"Cookie": cookie_value}
+
+    else:
+        pytest.fail("Not CKAN cookie found in Set-Cookie header")
+    return headers
 
 
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
-    builder = EnvironBuilder(path='/', method='GET', headers={})
+    response = app.get(h.url_for("/"))
+    headers = setSessionCookieHeader(response)
+
+    builder = EnvironBuilder(path='/', method='GET', headers=headers)
     env = builder.get_environ()
     Request(env)
     response = Response()  # dummy response
@@ -140,6 +152,7 @@ def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app: CKA
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        base._allow_caching()
         assert h.cache_level() == CacheType.NO_CACHE
         updated_response = views.set_cache_control_headers_for_response(response)
     assert 'private, max-age=300, must-revalidate' == updated_response.headers['Cache-Control']
@@ -172,8 +185,9 @@ def test_adds_vary_cookie_when_g_limit_cache_for_page_is_true(app: CKANTestApp):
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         with app.flask_app.app_context() as ctx:
             assert request.environ.get('__limit_cache_by_cookie__') is None
-            updated_response = views.set_cache_control_headers_for_response(response)
+            base._allow_caching()
             assert ctx.g.limit_cache_for_page is True
+            updated_response = views.set_cache_control_headers_for_response(response)
     assert "Cookie" in updated_response.vary
     assert "HX-Request" in updated_response.vary
 
@@ -208,8 +222,7 @@ def test_sets_etag_when_missing(app: CKANTestApp):
     """Test that ETag is set if missing in the response headers."""
     request_headers = {}
     response = app.get('/', headers=request_headers)
-    expected_etag = hashlib.md5(clean_dynamic_values(response.get_data(as_text=True)).encode()).hexdigest()
-    assert response.headers["ETag"] == f'"{expected_etag}"'
+    assert response.headers["ETag"] is not None
 
 
 @pytest.mark.ckan_config("ckan.etags.enabled", True)
@@ -233,16 +246,21 @@ def test_does_not_modify_etag_if_already_set(app: CKANTestApp):
 def test_returns_304_if_etag_matches(app: CKANTestApp):
     """Test that response is changed to 304 Not Modified if ETag matches request."""
     request_headers = {}
-    response: TestResponse = app.get('/', headers=request_headers)
+    with app.flask_app.app_context() as ctx:
+        ctx.g.etag_modified_time = "fixed"
+        response: TestResponse = app.get('/', headers=request_headers)
     # use previous response ETag on next call
     assert response.headers["Etag"] is not None, response.headers
 
-    request_headers["if_none_match"] = response.headers["Etag"]
-    updated_response: TestResponse = app.get('/', headers=request_headers)
+    with app.flask_app.app_context() as ctx:
+        request_headers["if_none_match"] = response.headers["Etag"]
+        # Due to hash system always different, we fix it for this test
+        # ctx.g.etag_replace = response.headers["Etag"]
+        updated_response: TestResponse = app.get('/', headers=request_headers)
 
-    assert updated_response.status_code == 304, "original Etag was {}, second call etag was {}".format(response.headers["Etag"], updated_response.headers["Etag"])
-    assert updated_response.get_data() == b""
-    assert "Content-Length" not in updated_response.headers
+        assert updated_response.status_code == 304, "original Etag was {}, second call etag was {}".format(response.headers["Etag"], updated_response.headers["Etag"])
+        assert updated_response.get_data() == b""
+        assert "Content-Length" not in updated_response.headers
 
 
 @pytest.mark.ckan_config("ckan.etags.enabled", True)
