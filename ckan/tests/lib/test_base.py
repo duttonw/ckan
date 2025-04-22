@@ -497,7 +497,7 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
 
     headers = setSessionCookieHeader(response)
 
-    response = app.get(h.url_for("activity.dashboard"), headers=headers)
+    response = app.get(h.url_for("dashboard.groups"), headers=headers)
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
 
@@ -518,6 +518,7 @@ def setSessionCookieHeader(response):
 def test_cache_control_while_logged_in_private_cache_disable(app):
     flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     request_headers = {}
+
     response = app.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers

@@ -1,12 +1,9 @@
 import pytest
 import re
 
-from unittest.mock import MagicMock
-from ckan.config.middleware import flask_app
-
 from flask import Request, Response
 from werkzeug.test import EnvironBuilder
-from ckan.common import request, CacheType
+from ckan.common import request, CacheType, session
 from ckan.lib import helpers as h, base
 
 from ckan.tests.helpers import CKANTestApp
@@ -131,7 +128,6 @@ def setSessionCookieHeader(response):
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
-    flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     response = app.get(h.url_for("/"))
     headers = setSessionCookieHeader(response)
 
@@ -141,6 +137,8 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        session.accessed = False
+        session.modified = False # CSRF is getting in the way of testing public overrides, disable session for now
         base._allow_caching()
         assert h.cache_level() == CacheType.PRIVATE
         updated_response = views.set_cache_control_headers_for_response(response)
@@ -151,13 +149,14 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
 @pytest.mark.ckan_config("ckan.cache.private.enabled", False)
 def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
-    flask_app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
     builder = EnvironBuilder(path='/', method='GET', headers={})
     env = builder.get_environ()
     Request(env)
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        session.accessed = False
+        session.modified = False # CSRF is getting in the way of testing public overrides, disable session for now
         base._allow_caching()
         assert h.cache_level() == CacheType.NO_CACHE
         updated_response = views.set_cache_control_headers_for_response(response)

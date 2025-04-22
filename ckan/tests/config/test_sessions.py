@@ -105,15 +105,14 @@ class TestSessionTypes:
 
     @pytest.mark.usefixtures("clean_redis")
     @pytest.mark.ckan_config("SESSION_TYPE", "redis")
-    @pytest.mark.ckan_config('WTF_CSRF_ENABLED', False)
     def test_redis_storage_no_session(self, app, monkeypatch):
         """Redis session interface creates a record in redis upon request.
         """
         redis = connect_to_redis()
 
         assert not redis.keys("*")
-        # A page that sets session
-        response = app.get("/")
+        # A request that has no session
+        response = app.get("/base/images/ckan-logo-footer.png")
         assert 'Set-Cookie' not in response.headers
         assert not redis.keys("*")
 
