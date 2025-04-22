@@ -115,7 +115,8 @@ def _allow_caching(cache_force: Optional[bool] = None):
 
     # Any rendered template will have Very header added, unless OVERRIDDEN flag is found
     if h.cache_level() != CacheType.OVERRIDDEN:
-        g.limit_cache_for_page = True
+        if h.limit_cache_for_page() is None:
+            g.limit_cache_for_page = True
 
     if h.cache_level():
         log.error("Cache Level found: %r, skipping default cache config", h.cache_level)
@@ -138,12 +139,12 @@ def _allow_caching(cache_force: Optional[bool] = None):
         h.set_cache_level(CacheType.NO_CACHE)
 
     # Don't allow public cache if caching is not enabled in config
-    if not config.get('ckan.cache_enabled'):
+    if not config.get('ckan.cache.public.enabled'):
         h.set_cache_level(CacheType.PRIVATE)
 
     # Don't allow private cache if caching is not enabled in config
     if (h.cache_level() == CacheType.PRIVATE
-       and config.get('ckan.cache_private_enabled')):
+       and config.get('ckan.cache.private.enabled')):
         h.set_cache_level(CacheType.NO_CACHE)
 
     if h.cache_level() is None:

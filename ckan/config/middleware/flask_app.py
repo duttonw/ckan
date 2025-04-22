@@ -56,7 +56,7 @@ from ckan.views import (identify_user,
                         set_etag_for_response,
                         handle_i18n,
                         set_ckan_current_url,
-                        _get_user_for_apitoken,
+                        _get_user_for_apitoken, set_cache_control_while_stale,
                         )
 from ckan.types import CKANApp, Config, Response
 
@@ -596,20 +596,24 @@ def _setup_webassets(app: CKANApp):
     def webassets(path: str) -> Response:
         h.set_cache_level(CacheType.OVERRIDDEN)
 
-        cache_expire = config.get(u'ckan.cache_expires', 0)
+        cache_expire = config.get(u'ckan.cache.expires', 0)
         if cache_expire == 0:
             # If set, ``Cache-Control`` will be ``public``, otherwise
             #         it will be ``no-cache``
             cache_expire = None
             shared_cache_expire = 0
         else:
-            shared_cache_expire = config.get(u'ckan.shared_cache_expires')
+            shared_cache_expire = config.get(u'ckan.cache.shared.expires')
 
         response = send_from_directory(webassets_folder, path,
                                        etag=True, max_age=cache_expire)
 
         if shared_cache_expire != 0:
             response.cache_control.s_maxage = shared_cache_expire
+        set_cache_control_while_stale(response)
+        if not session.modified:
+            # Session must be set to not accessed to stop introduction of vary by Cookie
+            session.accessed = False
         return response
 
     path = config["ckan.webassets.url"].rstrip("/")

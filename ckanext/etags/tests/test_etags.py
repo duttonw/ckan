@@ -25,10 +25,10 @@ def streaming_generator():
 
 @pytest.mark.ckan_config(u'ckan.plugins', u'etags')
 @pytest.mark.usefixtures(u'with_plugins', u'etags')
-@pytest.mark.ckan_config("ckan.cache_etags", True)
+@pytest.mark.ckan_config("ckan.etags.enabled", True)
 class test_etag_plugins():
 
-    @pytest.mark.ckan_config("ckan.cache_etags", False)
+    @pytest.mark.ckan_config("ckan.etags.enabled", False)
     def test_etag_not_set_when_config_disables_it(self, app: CKANTestApp):
         """Test that ETag is set if missing in the response headers."""
         request_headers = {}

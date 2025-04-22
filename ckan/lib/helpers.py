@@ -2893,8 +2893,18 @@ def cache_level():
 
 
 @core_helper
+def limit_cache_for_page() -> Optional[bool]:
+    return getattr(g, 'limit_cache_for_page', None)
+
+
+@core_helper
+def set_limit_cache_for_page(limit: bool) -> None:
+    g.limit_cache_for_page = limit
+
+
+@core_helper
 def set_cache_level(cache_type: 'CacheType|str',
-                    force: bool = False) -> 'CacheType|None':
+                    force: bool = False) -> Optional[CacheType]:
     """Allow setting the cache without downgrading cache unless forced
     force: Use with caution for example, downgrading cache to public
     when logged in can have major side effects"""
@@ -2918,22 +2928,22 @@ def set_cache_level(cache_type: 'CacheType|str',
 
 
 @core_helper
-def set_etag_suffix(etag_suffix: str) -> None:
+def etag_append(append_value: str) -> None:
     """ Adds additional etag uniqueness, can be called multiple times"""
-    current_value = getattr(g, 'etagAppend', "")
-    g.etagAppend = current_value + etag_suffix
+    current_value = getattr(g, 'etag_append', "")
+    g.etag_append = current_value + append_value
 
 
 @core_helper
 def set_etag_replace(etag_replace: str) -> None:
     """ Replace etag with this value, disable etag generation
     will not append set suffix's or prefix's"""
-    g.etagReplace = etag_replace
+    g.etag_replace = etag_replace
 
 
 @core_helper
-def set_etag_prefix(etag_modified_time: str) -> None:
-    """ Set mtime value on etag instead of current datetime on request
-    very useful if you want to key a page to db last modified where no
-    other plugins provide dynamic content for non-logged in/public users"""
-    g.etagMTime = etag_modified_time
+def set_etag_modified_time(etag_modified_time: str) -> None:
+    """ Set modified time value on etag instead of current datetime of request.
+    Very useful if you want to key a page to db last modified where
+    other plugins provide their uniqueness constraint via etag_append(str)"""
+    g.etag_modified_time = etag_modified_time

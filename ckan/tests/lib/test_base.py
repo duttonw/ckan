@@ -454,8 +454,8 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
     assert "Access-Control-Allow-Headers" not in response_headers
 
 
-@pytest.mark.ckan_config('ckan.cache_enabled', 'false')
-@pytest.mark.ckan_config('ckan.cache_private_enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.public.enabled', 'false')
+@pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
 def test_cache_control_in_when_public_cache_is_not_enabled(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)
@@ -465,7 +465,7 @@ def test_cache_control_in_when_public_cache_is_not_enabled(app):
     assert response_headers['Cache-Control'] == 'private, max-age=60, must-revalidate'
 
 
-@pytest.mark.ckan_config('ckan.cache_enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 def test_cache_control_when_cache_enabled(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)
@@ -475,8 +475,8 @@ def test_cache_control_when_cache_enabled(app):
     assert 'public' in response_headers['Cache-Control']
 
 
-@pytest.mark.ckan_config('ckan.cache_enabled', 'true')
-@pytest.mark.ckan_config('ckan.cache_expires', 300)
+@pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.expires', 300)
 def test_cache_control_max_age_when_cache_enabled(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)
@@ -487,8 +487,8 @@ def test_cache_control_max_age_when_cache_enabled(app):
     assert 'max-age=300' in response_headers['Cache-Control']
 
 
-@pytest.mark.ckan_config('ckan.cache_enabled', 'true')
-@pytest.mark.ckan_config('ckan.cache_private_enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
 def test_cache_control_while_logged_in(app: CKANTestApp):
     user = factories.User(password="correct123")
     identity = {"login": user["name"], "password": "correct123"}
@@ -511,8 +511,8 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
         pytest.fail("Not CKAN cookie found in Set-Cookie header")
 
 
-@pytest.mark.ckan_config('ckan.cache_enabled', 'true')
-@pytest.mark.ckan_config('ckan.cache_private_enabled', 'false')
+@pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.private.enabled', 'false')
 def test_cache_control_while_logged_in_private_cache_disable(app):
     request_headers = {}
     response = app.get('/', headers=request_headers)

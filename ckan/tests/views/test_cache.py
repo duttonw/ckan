@@ -36,7 +36,7 @@ def test_sets_cache_control_headers_default(app: CKANTestApp):
     # assert updated_response.cache_control.must_revalidate is True, updated_response
 
 
-@pytest.mark.ckan_config("ckan.cache_expires", 3600)
+@pytest.mark.ckan_config("ckan.cache.expires", 3600)
 def test_sets_cache_control_headers_cache_expires(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
@@ -51,7 +51,7 @@ def test_sets_cache_control_headers_cache_expires(app: CKANTestApp):
     assert 'public, max-age=300, s-maxage=3600' == updated_response.headers['Cache-Control']
 
 
-@pytest.mark.ckan_config("ckan.shared_cache_expires", 1)
+@pytest.mark.ckan_config("ckan.cache.shared.expires", 1)
 def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
@@ -67,7 +67,7 @@ def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
 
 
 @pytest.mark.ckan_config("ckan.stale-while-revalidate", 1)
-@pytest.mark.ckan_config("ckan.cache_stale-if-error", 2)
+@pytest.mark.ckan_config("ckan.cache.stale_if_error", 2)
 def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
@@ -83,7 +83,7 @@ def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
 
 
 @pytest.mark.ckan_config("ckan.stale-while-revalidate", 0)
-@pytest.mark.ckan_config("ckan.cache_stale-if-error", 0)
+@pytest.mark.ckan_config("ckan.cache.stale_if_error", 0)
 def test_sets_cache_control_headers_stale_config_settings_disable(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
@@ -98,7 +98,7 @@ def test_sets_cache_control_headers_stale_config_settings_disable(app: CKANTestA
     assert 'public, max-age=300, s-maxage=`1, must-revalidate' == updated_response.headers['Cache-Control']
 
 
-@pytest.mark.ckan_config("ckan.private_cache_expires", 1234)
+@pytest.mark.ckan_config("ckan.cache.private.expires", 1234)
 def test_sets_cache_control_headers_private_cache_expires(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
@@ -113,7 +113,7 @@ def test_sets_cache_control_headers_private_cache_expires(app: CKANTestApp):
     assert 'private, max-age=1234, must-revalidate' == updated_response.headers['Cache-Control']
 
 
-@pytest.mark.ckan_config("ckan.cache_enabled", False)
+@pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
@@ -129,8 +129,8 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     assert 'private, max-age=300, must-revalidate' == updated_response.headers['Cache-Control']
 
 
-@pytest.mark.ckan_config("ckan.cache_enabled", False)
-@pytest.mark.ckan_config("ckan.cache_private_enabled", False)
+@pytest.mark.ckan_config("ckan.cache.public.enabled", False)
+@pytest.mark.ckan_config("ckan.cache.private.enabled", False)
 def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
@@ -195,7 +195,7 @@ def test_removes_pragma_header_if_present(app: CKANTestApp):
 
 
 # Etag testing
-@pytest.mark.ckan_config("ckan.cache_etags", False)
+@pytest.mark.ckan_config("ckan.etags.enabled", False)
 def test_etag_not_set_when_config_disables_it(app: CKANTestApp):
     """Test that ETag is set if missing in the response headers."""
     request_headers = {}
@@ -203,7 +203,7 @@ def test_etag_not_set_when_config_disables_it(app: CKANTestApp):
     assert "ETag" not in response.headers, response.headers
 
 
-@pytest.mark.ckan_config("ckan.cache_etags", True)
+@pytest.mark.ckan_config("ckan.etags.enabled", True)
 def test_sets_etag_when_missing(app: CKANTestApp):
     """Test that ETag is set if missing in the response headers."""
     request_headers = {}
@@ -212,7 +212,7 @@ def test_sets_etag_when_missing(app: CKANTestApp):
     assert response.headers["ETag"] == f'"{expected_etag}"'
 
 
-@pytest.mark.ckan_config("ckan.cache_etags", True)
+@pytest.mark.ckan_config("ckan.etags.enabled", True)
 def test_does_not_modify_etag_if_already_set(app: CKANTestApp):
     """Test that an existing ETag is not modified."""
 
@@ -229,7 +229,7 @@ def test_does_not_modify_etag_if_already_set(app: CKANTestApp):
     assert updated_response.headers["ETag"] == '"existing-etag"'
 
 
-@pytest.mark.ckan_config("ckan.cache_etags", True)
+@pytest.mark.ckan_config("ckan.etags.enabled", True)
 def test_returns_304_if_etag_matches(app: CKANTestApp):
     """Test that response is changed to 304 Not Modified if ETag matches request."""
     request_headers = {}
@@ -245,7 +245,7 @@ def test_returns_304_if_etag_matches(app: CKANTestApp):
     assert "Content-Length" not in updated_response.headers
 
 
-@pytest.mark.ckan_config("ckan.cache_etags", True)
+@pytest.mark.ckan_config("ckan.etags.enabled", True)
 def test_does_not_return_304_if_etag_does_not_match(app: CKANTestApp):
     """Test that response is not modified if request's If-None-Match does not match the ETag."""
 
@@ -265,7 +265,7 @@ def streaming_generator():
     yield b"streaming response data"
 
 
-@pytest.mark.ckan_config("ckan.cache_etags", True)
+@pytest.mark.ckan_config("ckan.etags.enabled", True)
 def test_does_not_add_etag_if_streaming_response_encountered(app: CKANTestApp):
     """Test that response is not modified if request's If-None-Match does not match the ETag."""
     from types import GeneratorType
