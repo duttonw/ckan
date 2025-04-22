@@ -1209,9 +1209,8 @@ def get_param_int(name: str, default: int = 10) -> int:
         return default
 
 
-def _url_with_params(url: str,
-                     params: Optional[
-                         Iterable[tuple[str, Any]]]) -> str:
+def _url_with_params(url: str, params: Optional[Iterable[tuple[str,
+                                                               Any]]]) -> str:
     if not params:
         return url
     params = [(k, v.encode('utf-8') if isinstance(v, str) else str(v))

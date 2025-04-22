@@ -113,7 +113,7 @@ class TestSessionTypes:
         assert not redis.keys("*")
         # A page that sets session
         response = app.post("/")
-        assert 'set-cookie' not in response.headers
+        assert 'Set-Cookie' not in response.headers
         assert not redis.keys("*")
 
     @pytest.mark.usefixtures("test_request_context")

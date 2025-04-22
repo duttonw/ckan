@@ -497,8 +497,8 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
     response = app.post(
         h.url_for("user.login"), data=identity, headers=request_headers
     )
-    assert 'Cache-Control' in response
-    assert response['Cache-Control'] == 'no-store, no-cache, max-age=0'
+    assert 'Cache-Control' in response.headers
+    assert response.headers['Cache-Control'] == 'no-store, no-cache, max-age=0'
 
     match = re.search(r'ckan=([^;]+)', response.headers['set-cookie'])
     if match:

@@ -27,7 +27,7 @@ from flask_babel import Babel
 
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
-from ckan.common import CKANConfig, asbool, current_user, session, CacheType
+from ckan.common import CKANConfig, asbool, current_user, session
 
 import ckan.model as model
 from ckan.lib import base
@@ -42,6 +42,8 @@ from ckan.config.middleware.common_middleware import (
     RootPathMiddleware,
     CKANSecureCookieSessionInterface,
     CKANRedisSessionInterface,
+    static_or_webasset_pre_configuration,
+    static_or_webasset_post_configuration
 )
 import ckan.lib.app_globals as app_globals
 import ckan.lib.plugins as lib_plugins
@@ -56,8 +58,7 @@ from ckan.views import (identify_user,
                         set_etag_for_response,
                         handle_i18n,
                         set_ckan_current_url,
-                        _get_user_for_apitoken, set_cache_control_while_stale,
-                        )
+                        _get_user_for_apitoken, )
 from ckan.types import CKANApp, Config, Response
 
 log = logging.getLogger(__name__)
@@ -594,26 +595,10 @@ def _setup_webassets(app: CKANApp):
     webassets_folder = get_webassets_path()
 
     def webassets(path: str) -> Response:
-        h.set_cache_level(CacheType.OVERRIDDEN)
-
-        cache_expire = config.get(u'ckan.cache.expires', 0)
-        if cache_expire == 0:
-            # If set, ``Cache-Control`` will be ``public``, otherwise
-            #         it will be ``no-cache``
-            cache_expire = None
-            shared_cache_expire = 0
-        else:
-            shared_cache_expire = config.get(u'ckan.cache.shared.expires')
-
+        cache_expire, shared_cache_expire = static_or_webasset_pre_configuration(None)
         response = send_from_directory(webassets_folder, path,
                                        etag=True, max_age=cache_expire)
-
-        if shared_cache_expire != 0:
-            response.cache_control.s_maxage = shared_cache_expire
-        set_cache_control_while_stale(response)
-        if not session.modified:
-            # Session must be set to not accessed to stop introduction of vary by Cookie
-            session.accessed = False
+        static_or_webasset_post_configuration(response, shared_cache_expire)
         return response
 
     path = config["ckan.webassets.url"].rstrip("/")
