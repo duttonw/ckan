@@ -1,6 +1,5 @@
 import pytest
 import re
-import hashlib
 from flask import Request, Response
 from werkzeug.test import EnvironBuilder
 from ckan.common import request, CacheType
@@ -112,6 +111,7 @@ def test_sets_cache_control_headers_private_cache_expires(app: CKANTestApp):
         assert h.set_cache_level(CacheType.PRIVATE, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert 'must-understand, private, max-age=1234, stale-while-revalidate=0, stale-if-error=86400' == updated_response.headers['Cache-Control']
+
 
 def setSessionCookieHeader(response):
     match = re.search(r'ckan=([^;]+)', response.headers['set-cookie'])
