@@ -255,9 +255,17 @@ def test_returns_304_if_etag_matches(app: CKANTestApp):
     assert response.headers["Etag"] is not None, response.headers
 
     with app.flask_app.app_context() as ctx:
+        ctx.g.etag_modified_time = "fixed"
+        updated_response: TestResponse = app.get('/', headers=request_headers)
+
+        assert updated_response.status_code == 304, "original Etag was {}, second call etag was {}".format(response.headers["Etag"], updated_response.headers["Etag"])
+        assert updated_response.get_data() == b""
+        assert "Content-Length" not in updated_response.headers
+
+    with app.flask_app.app_context() as ctx:
         request_headers["if_none_match"] = response.headers["Etag"]
         # Due to hash system always different, we fix it for this test
-        ctx.g.etag_replace = response.headers["Etag"]
+        ctx.g.etag_replace = response.headers["Etag"].replace('"', '',)
         updated_response: TestResponse = app.get('/', headers=request_headers)
 
         assert updated_response.status_code == 304, "original Etag was {}, second call etag was {}".format(response.headers["Etag"], updated_response.headers["Etag"])
