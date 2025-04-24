@@ -447,8 +447,6 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
 def test_cache_control_in_when_public_cache_is_not_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
     response = app_without_csrf.get('/', headers=request_headers)
-    request_headers = setSessionCookieHeader(response)
-    response = app_without_csrf.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
@@ -458,10 +456,10 @@ def test_cache_control_in_when_public_cache_is_not_enabled(app_without_csrf: CKA
 def test_cache_control_when_cache_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
     response = app_without_csrf.get('/', headers=request_headers)
-    response_headers = dict(response.headers)
 
-    assert 'Cache-Control' in response_headers
-    assert 'public' == response_headers['Cache-Control']
+    assert 'Cache-Control' in response.headers
+    assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400'
+            == response.headers['Cache-Control'])
 
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
@@ -497,7 +495,8 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
 
     response = app.get(h.url_for("dashboard.groups"), headers=headers)
     assert 'Cache-Control' in response.headers
-    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
+    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate', (
+        dict(response.headers))
 
 
 def setSessionCookieHeader(response):
@@ -518,8 +517,8 @@ def test_cache_control_while_logged_in_private_cache_disable(app_without_csrf: C
     response = app_without_csrf.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers
-    assert 'public' in response.headers['Cache-Control']
-    assert 'max-age=300' in response.headers['Cache-Control']
+    assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400'
+            == response.headers['Cache-Control'])
 
     user = factories.User(password="correct123")
     identity = {"login": user["name"], "password": "correct123"}

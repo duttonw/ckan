@@ -155,10 +155,11 @@ def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app_with
     response = Response()  # dummy response
 
     with app_without_csrf.flask_app.request_context(env):  # only works if you have app.flask_app
+        assert h.cache_level() is None
         session.accessed = False
         session.modified = False  # CSRF is getting in the way of testing public overrides, disable session for now
         base._allow_caching()
-        assert h.cache_level() == CacheType.NO_CACHE
+        assert h.cache_level() is CacheType.NO_CACHE
         updated_response = views.set_cache_control_headers_for_response(response)
     assert 'private, max-age=300, must-revalidate' == updated_response.headers['Cache-Control']
 
