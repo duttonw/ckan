@@ -1,7 +1,6 @@
 # encoding: utf-8
 import re
 from unittest.mock import MagicMock
-from ckan.config.middleware import flask_app
 
 import pytest
 
@@ -444,10 +443,15 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
     assert "Access-Control-Allow-Headers" not in response_headers
 
 
+@pytest.fixture
+def disable_csrf(monkeypatch):
+    mock_csrf = MagicMock()  # disable CSRF protection and session usage
+    monkeypatch.setattr("ckan.config.middleware.flask_app.csrf", mock_csrf)
+
+
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'false')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
-def test_cache_control_in_when_public_cache_is_not_enabled(app):
-    app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
+def test_cache_control_in_when_public_cache_is_not_enabled(disable_csrf, app: CKANTestApp):
     request_headers = {}
     response = app.get('/', headers=request_headers)
     request_headers = setSessionCookieHeader(response)
@@ -458,8 +462,7 @@ def test_cache_control_in_when_public_cache_is_not_enabled(app):
 
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
-def test_cache_control_when_cache_enabled(app):
-    app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
+def test_cache_control_when_cache_enabled(disable_csrf, app: CKANTestApp):
     request_headers = {}
     response = app.get('/', headers=request_headers)
     response_headers = dict(response.headers)
@@ -470,8 +473,7 @@ def test_cache_control_when_cache_enabled(app):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.expires', 300)
-def test_cache_control_max_age_when_cache_enabled(app: CKANTestApp):
-    app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
+def test_cache_control_max_age_when_cache_enabled(disable_csrf, app: CKANTestApp):
     request_headers = {}
     response = app.get('/', headers=request_headers)
 
@@ -515,10 +517,8 @@ def setSessionCookieHeader(response):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'false')
-def test_cache_control_while_logged_in_private_cache_disable(app):
-    app.csrf.protect = MagicMock()  # disable CSRF protection and session usage
+def test_cache_control_while_logged_in_private_cache_disable(disable_csrf, app: CKANTestApp):
     request_headers = {}
-
     response = app.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers

@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 import re
 
@@ -15,11 +17,17 @@ field_name = '_csrf_token'  # emulate WTF_CSRF_FIELD_NAME for regex verification
 pattern = fr'(?i)((?:_csrf_token|{field_name})[^>]*?\b(?:content|value)=|\bnonce=)["\'][^"\']+(["\'])'  # noqa: E501
 
 
+@pytest.fixture
+def disable_csrf(monkeypatch):
+    mock_csrf = MagicMock()  # disable CSRF protection and session usage
+    monkeypatch.setattr("ckan.config.middleware.flask_app.csrf", mock_csrf)
+
+
 def clean_dynamic_values(text):
     return re.sub(pattern, lambda m: m.group(1) + '="etag_removed"', text)
 
 
-def test_sets_cache_control_headers_default(app: CKANTestApp):
+def test_sets_cache_control_headers_default(disable_csrf, app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={}, environ_overrides={})
@@ -35,7 +43,7 @@ def test_sets_cache_control_headers_default(app: CKANTestApp):
 
 
 @pytest.mark.ckan_config("ckan.cache.expires", 3600)
-def test_sets_cache_control_headers_cache_expires(app: CKANTestApp):
+def test_sets_cache_control_headers_cache_expires(disable_csrf, app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={})
@@ -51,7 +59,7 @@ def test_sets_cache_control_headers_cache_expires(app: CKANTestApp):
 
 
 @pytest.mark.ckan_config("ckan.cache.shared.expires", 1)
-def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
+def test_sets_cache_control_headers_shared_cache_expires(disable_csrf, app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={})
@@ -68,7 +76,7 @@ def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
 
 @pytest.mark.ckan_config("ckan.cache.stale_while_revalidates", 1)
 @pytest.mark.ckan_config("ckan.cache.stale_if_error", 2)
-def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
+def test_sets_cache_control_headers_stale_config_settings(disable_csrf, app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={})
@@ -85,7 +93,7 @@ def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
 
 @pytest.mark.ckan_config("ckan.stale-while-revalidate", 0)
 @pytest.mark.ckan_config("ckan.cache.stale_if_error", 0)
-def test_sets_cache_control_headers_stale_config_settings_disable(app: CKANTestApp):
+def test_sets_cache_control_headers_stale_config_settings_disable(disable_csrf, app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={})
@@ -126,7 +134,7 @@ def setSessionCookieHeader(response):
 
 
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
-def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
+def test_cache_enabled_false_defaults_to_private(disable_csrf, app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
     response = app.get(h.url_for("/"))
     headers = setSessionCookieHeader(response)
@@ -147,7 +155,7 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
 
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 @pytest.mark.ckan_config("ckan.cache.private.enabled", False)
-def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app: CKANTestApp):
+def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(disable_csrf, app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
     builder = EnvironBuilder(path='/', method='GET', headers={})
     env = builder.get_environ()
