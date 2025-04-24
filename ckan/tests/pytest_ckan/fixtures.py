@@ -195,10 +195,18 @@ def disable_csrf(monkeypatch):
     monkeypatch.setattr("ckan.config.middleware.flask_app.csrf", mock_csrf)
 
 
+def unwrap_flask_app(app):
+    """Recursively unwrap WSGI middleware to get to the Flask app."""
+    while hasattr(app, 'app'):
+        app = app.app
+    return app
+
+
 @pytest.fixture
 def add_fake_csrf_token(app):
     # app depends on other internal fixtures (e.g. CKAN init)
-    app.app.jinja_env.globals["csrf_token"] = lambda: "fake-token"
+    flask_app = unwrap_flask_app(app)
+    flask_app.app.jinja_env.globals["csrf_token"] = lambda: "fake-token"
     return app
 
 
