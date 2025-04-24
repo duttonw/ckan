@@ -443,29 +443,31 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
 
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
-@pytest.mark.ckan_config('ckan.cache.public.enabled', 'false')
-@pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.public.enabled', False)
+@pytest.mark.ckan_config('ckan.cache.private.enabled', True)
 def test_cache_control_in_when_public_cache_is_not_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
     response = app_without_csrf.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers
-    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate', response.headers['Cache-Control'] + ' Set-Cookie: ' + 'Set-Cookie' in response.headers
+    assert 'Set-Cookie' not in response.headers
+    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
 
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
-@pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.public.enabled', True)
 def test_cache_control_when_cache_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
     response = app_without_csrf.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers
+    assert 'Set-Cookie' not in response.headers
     assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400'
             == response.headers['Cache-Control'])
 
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
-@pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
+@pytest.mark.ckan_config('ckan.cache.public.enabled', True)
 @pytest.mark.ckan_config('ckan.cache.expires', 300)
 def test_cache_control_max_age_when_cache_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
@@ -514,8 +516,8 @@ def set_session_cookie_header(response):
 
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
-@pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
-@pytest.mark.ckan_config('ckan.cache.private.enabled', 'false')
+@pytest.mark.ckan_config('ckan.cache.public.enabled', True)
+@pytest.mark.ckan_config('ckan.cache.private.enabled', False)
 def test_cache_control_while_logged_in_private_cache_disable(app_without_csrf: CKANTestApp):
     request_headers = {}
     response = app_without_csrf.get('/', headers=request_headers)
