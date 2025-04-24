@@ -530,4 +530,4 @@ def test_cache_control_while_logged_in_private_cache_disable(app_without_csrf: C
     response_headers = dict(response.headers)
 
     assert 'Cache-Control' in response_headers
-    assert response_headers['Cache-Control'] == 'no-cache, max-age=0'
+    assert response_headers['Cache-Control'] == 'must-understand, no-cache, max-age=0, no-store'

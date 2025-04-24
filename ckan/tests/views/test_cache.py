@@ -128,10 +128,7 @@ def setSessionCookieHeader(response):
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 def test_cache_enabled_false_defaults_to_private(app_without_csrf: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
-    response = app_without_csrf.get(h.url_for("/"))
-    headers = setSessionCookieHeader(response)
-
-    builder = EnvironBuilder(path='/', method='GET', headers=headers)
+    builder = EnvironBuilder(path='/', method='GET')
     env = builder.get_environ()
     Request(env)
     response = Response()  # dummy response

@@ -121,9 +121,11 @@ def _allow_caching(cache_force: Optional[bool] = None):
     if h.cache_level():
         log.error("Cache Level found: %r, skipping default cache config", h.cache_level)
         return
+    else:
+        h.set_cache_level(CacheType.PUBLIC)
 
     # Do not allow caching of pages for logged in users/flash messages etc.
-    elif ('user' in g and g.user) or _is_valid_session_cookie_data():
+    if ('user' in g and g.user) or _is_valid_session_cookie_data():
         h.set_cache_level(CacheType.PRIVATE)
     # Tests etc.
     elif session.get("_user_id"):
@@ -132,10 +134,14 @@ def _allow_caching(cache_force: Optional[bool] = None):
     # Don't cache if based on a non-cachable template used in this.
     if request.environ.get('__no_cache__'):
         # Depreciated, use h.set_cache_level(CacheType.NO_CACHE)
+        log.warning("request.environ['__no_cache__'] is depreciated, "
+                    "use h.set_cache_level(CacheType.NO_CACHE)")
         h.set_cache_level(CacheType.NO_CACHE)
     # Don't cache if we have set the __no_cache__ param in the query string.
     elif request.args.get('__no_cache__'):
         # Depreciated, use header Cache-Control: no-cache
+        log.warning("request.args['__no_cache__'] is depreciated, "
+                    "use h.set_cache_level(CacheType.NO_CACHE)")
         h.set_cache_level(CacheType.NO_CACHE)
 
     # Don't allow public cache if caching is not enabled in config
@@ -146,10 +152,6 @@ def _allow_caching(cache_force: Optional[bool] = None):
     if (h.cache_level() == CacheType.PRIVATE
        and config.get('ckan.cache.private.enabled')):
         h.set_cache_level(CacheType.NO_CACHE)
-
-    if h.cache_level() is None:
-        log.error("Cache Level not set")
-        h.set_cache_level(CacheType.PUBLIC)
 
 
 def _is_valid_session_cookie_data() -> bool:
