@@ -442,6 +442,7 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
     assert "Access-Control-Allow-Headers" not in response_headers
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'false')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
 def test_cache_control_in_when_public_cache_is_not_enabled(app_without_csrf: CKANTestApp):
@@ -449,9 +450,10 @@ def test_cache_control_in_when_public_cache_is_not_enabled(app_without_csrf: CKA
     response = app_without_csrf.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers
-    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
+    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate', response.headers['Cache-Control'] + ' Set-Cookie: ' + 'Set-Cookie' in response.headers
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 def test_cache_control_when_cache_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
@@ -462,6 +464,7 @@ def test_cache_control_when_cache_enabled(app_without_csrf: CKANTestApp):
             == response.headers['Cache-Control'])
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.expires', 300)
 def test_cache_control_max_age_when_cache_enabled(app_without_csrf: CKANTestApp):
@@ -488,10 +491,10 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, no-cache, max-age=0, no-store'
 
-    headers = setSessionCookieHeader(response)
+    headers = set_session_cookie_header(response)
 
     response = app.get(h.url_for("dashboard.groups"), headers=headers)
-    headers = setSessionCookieHeader(response)
+    headers = set_session_cookie_header(response)
 
     response = app.get(h.url_for("dashboard.groups"), headers=headers)
     assert 'Cache-Control' in response.headers
@@ -499,7 +502,7 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
         dict(response.headers))
 
 
-def setSessionCookieHeader(response):
+def set_session_cookie_header(response):
     match = re.search(r'ckan=([^;]+)', response.headers['set-cookie'])
     if match:
         cookie_value = match.group(0)  # Includes 'ckan=...' part
@@ -510,6 +513,7 @@ def setSessionCookieHeader(response):
     return headers
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'false')
 def test_cache_control_while_logged_in_private_cache_disable(app_without_csrf: CKANTestApp):

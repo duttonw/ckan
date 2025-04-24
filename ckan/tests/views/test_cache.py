@@ -19,6 +19,7 @@ def clean_dynamic_values(text):
     return re.sub(pattern, lambda m: m.group(1) + '="etag_removed"', text)
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 def test_sets_cache_control_headers_default(app_without_csrf: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed."""
 
@@ -34,6 +35,7 @@ def test_sets_cache_control_headers_default(app_without_csrf: CKANTestApp):
             updated_response.headers['Cache-Control'])
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.expires", 3600)
 def test_sets_cache_control_headers_cache_expires(app_without_csrf: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
@@ -50,6 +52,7 @@ def test_sets_cache_control_headers_cache_expires(app_without_csrf: CKANTestApp)
             == updated_response.headers['Cache-Control'])
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.shared.expires", 1)
 def test_sets_cache_control_headers_shared_cache_expires(app_without_csrf: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
@@ -66,6 +69,7 @@ def test_sets_cache_control_headers_shared_cache_expires(app_without_csrf: CKANT
             == updated_response.headers['Cache-Control'])
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.stale_while_revalidates", 1)
 @pytest.mark.ckan_config("ckan.cache.stale_if_error", 2)
 def test_sets_cache_control_headers_stale_config_settings(app_without_csrf: CKANTestApp):
@@ -83,6 +87,7 @@ def test_sets_cache_control_headers_stale_config_settings(app_without_csrf: CKAN
             == updated_response.headers['Cache-Control'])
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.stale-while-revalidate", 0)
 @pytest.mark.ckan_config("ckan.cache.stale_if_error", 0)
 def test_sets_cache_control_headers_stale_config_settings_disable(app_without_csrf: CKANTestApp):
@@ -125,6 +130,7 @@ def setSessionCookieHeader(response):
     return headers
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 def test_cache_enabled_false_defaults_to_private(app_without_csrf: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
@@ -142,23 +148,13 @@ def test_cache_enabled_false_defaults_to_private(app_without_csrf: CKANTestApp):
     assert 'private, max-age=300, must-revalidate' == updated_response.headers['Cache-Control']
 
 
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 @pytest.mark.ckan_config("ckan.cache.private.enabled", False)
 def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app_without_csrf: CKANTestApp):
-    """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
-    builder = EnvironBuilder(path='/', method='GET', headers={})
-    env = builder.get_environ()
-    Request(env)
-    response = Response()  # dummy response
-
-    with app_without_csrf.flask_app.request_context(env):  # only works if you have app.flask_app
-        assert h.cache_level() is None
-        session.accessed = False
-        session.modified = False  # CSRF is getting in the way of testing public overrides, disable session for now
-        base._allow_caching()
-        assert h.cache_level() is CacheType.NO_CACHE
-        updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'private, max-age=300, must-revalidate' == updated_response.headers['Cache-Control']
+    """Test that cache control headers are set correctly when caching is not allowed."""
+    response = app_without_csrf.get(h.url_for("/"))
+    assert 'private, max-age=300, must-revalidate' == response.headers['Cache-Control']
 
 
 # Vary testing
