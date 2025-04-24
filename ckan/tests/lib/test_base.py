@@ -1,6 +1,5 @@
 # encoding: utf-8
 import re
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -443,28 +442,22 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
     assert "Access-Control-Allow-Headers" not in response_headers
 
 
-@pytest.fixture
-def disable_csrf(monkeypatch):
-    mock_csrf = MagicMock()  # disable CSRF protection and session usage
-    monkeypatch.setattr("ckan.config.middleware.flask_app.csrf", mock_csrf)
-
-
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'false')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
-def test_cache_control_in_when_public_cache_is_not_enabled(disable_csrf, app: CKANTestApp):
+def test_cache_control_in_when_public_cache_is_not_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
-    response = app.get('/', headers=request_headers)
+    response = app_without_csrf.get('/', headers=request_headers)
     request_headers = setSessionCookieHeader(response)
-    response = app.get('/', headers=request_headers)
+    response = app_without_csrf.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
 
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
-def test_cache_control_when_cache_enabled(disable_csrf, app: CKANTestApp):
+def test_cache_control_when_cache_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
-    response = app.get('/', headers=request_headers)
+    response = app_without_csrf.get('/', headers=request_headers)
     response_headers = dict(response.headers)
 
     assert 'Cache-Control' in response_headers
@@ -473,9 +466,9 @@ def test_cache_control_when_cache_enabled(disable_csrf, app: CKANTestApp):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.expires', 300)
-def test_cache_control_max_age_when_cache_enabled(disable_csrf, app: CKANTestApp):
+def test_cache_control_max_age_when_cache_enabled(app_without_csrf: CKANTestApp):
     request_headers = {}
-    response = app.get('/', headers=request_headers)
+    response = app_without_csrf.get('/', headers=request_headers)
 
     response_headers = response.headers
 
@@ -517,9 +510,9 @@ def setSessionCookieHeader(response):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'false')
-def test_cache_control_while_logged_in_private_cache_disable(disable_csrf, app: CKANTestApp):
+def test_cache_control_while_logged_in_private_cache_disable(app_without_csrf: CKANTestApp):
     request_headers = {}
-    response = app.get('/', headers=request_headers)
+    response = app_without_csrf.get('/', headers=request_headers)
 
     assert 'Cache-Control' in response.headers
     assert 'public' in response.headers['Cache-Control']
@@ -529,7 +522,7 @@ def test_cache_control_while_logged_in_private_cache_disable(disable_csrf, app: 
     identity = {"login": user["name"], "password": "correct123"}
     request_headers = {}
 
-    response = app.post(
+    response = app_without_csrf.post(
         h.url_for("user.login"), data=identity, headers=request_headers
     )
     response_headers = dict(response.headers)
