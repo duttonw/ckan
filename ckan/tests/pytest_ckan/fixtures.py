@@ -199,7 +199,7 @@ def disable_csrf(monkeypatch):
 def add_fake_csrf_token(app):
     # app depends on other internal fixtures (e.g. CKAN init)
     app.app.jinja_env.globals["csrf_token"] = lambda: "fake-token"
-    return make_app
+    return app
 
 
 @pytest.fixture
