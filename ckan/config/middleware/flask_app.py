@@ -228,10 +228,10 @@ def make_flask_stack(conf: Union[Config, CKANConfig]) -> CKANApp:
     app.config["WTF_CSRF_FIELD_NAME"] = config.get('WTF_CSRF_FIELD_NAME')
     app.config['WTF_CSRF_TIME_LIMIT'] = config.get('WTF_CSRF_TIME_LIMIT')
     csrf.init_app(app)
-    if not config.get('WTF_CSRF_ENABLED', True):
-        # Monkey patch the csrf_token generator so session is not altered
-        app.jinja_env.globals["csrf_token"] = lambda: "disabled"
-        app.context_processor(lambda: {"csrf_token": lambda: "disabled"})
+    # if not config.get('WTF_CSRF_ENABLED', True):
+    #     # Monkey patch the csrf_token generator so session is not altered
+    #     app.jinja_env.globals["csrf_token"] = lambda: "disabled"
+    #     app.context_processor(lambda: {"csrf_token": lambda: "disabled"})
 
     if config.get("ckan.csrf_protection.ignore_extensions"):
         log.warning(csrf_warn_extensions)
@@ -380,6 +380,7 @@ def ckan_before_request() -> Optional[Response]:
 
     # Set the csrf_field_name so we can use it in our templates
     g.csrf_field_name = config.get("WTF_CSRF_FIELD_NAME")
+    g.csrf_enabled = config.get('WTF_CSRF_ENABLED')
 
     # Provide g.controller and g.action for backward compatibility
     # with extensions

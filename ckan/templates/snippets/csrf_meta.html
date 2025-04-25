@@ -1,0 +1,10 @@
+{# Adds a csrf_token to meta for javascript usage. #}
+{%- block csrf_meta -%}
+{% if g.csrf_enabled %}
+      <meta name="csrf_field_name" content="{{ g.csrf_field_name }}" />
+      <meta name="{{ g.csrf_field_name }}" content="{{ csrf_token() }}" />
+{% else %}
+      <meta name="csrf_field_name" content="{{ g.csrf_field_name }}" />
+      <meta name="{{ g.csrf_field_name }}" content="disabled" />
+{% endif %}
+{%- endblock -%}

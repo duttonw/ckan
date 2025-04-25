@@ -20,7 +20,7 @@ def clean_dynamic_values(text):
 
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
-def test_sets_cache_control_headers_default(app_without_csrf: CKANTestApp):
+def test_sets_cache_control_headers_default(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={}, environ_overrides={})
@@ -28,7 +28,7 @@ def test_sets_cache_control_headers_default(app_without_csrf: CKANTestApp):
     Request(env)
     response = Response()  # dummy response
 
-    with app_without_csrf.flask_app.request_context(env):  # only works if you have app.flask_app
+    with app.flask_app.request_context(env):  # only works if you have app.flask_app
         h.set_cache_level(CacheType.PUBLIC)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400' ==
@@ -37,7 +37,7 @@ def test_sets_cache_control_headers_default(app_without_csrf: CKANTestApp):
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.expires", 3600)
-def test_sets_cache_control_headers_cache_expires(app_without_csrf: CKANTestApp):
+def test_sets_cache_control_headers_cache_expires(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={})
@@ -45,7 +45,7 @@ def test_sets_cache_control_headers_cache_expires(app_without_csrf: CKANTestApp)
     Request(env)
     response = Response()  # dummy response
 
-    with app_without_csrf.flask_app.request_context(env):  # only works if you have app.flask_app
+    with app.flask_app.request_context(env):  # only works if you have app.flask_app
         h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400'
@@ -54,7 +54,7 @@ def test_sets_cache_control_headers_cache_expires(app_without_csrf: CKANTestApp)
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.shared.expires", 1)
-def test_sets_cache_control_headers_shared_cache_expires(app_without_csrf: CKANTestApp):
+def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={})
@@ -62,7 +62,7 @@ def test_sets_cache_control_headers_shared_cache_expires(app_without_csrf: CKANT
     Request(env)
     response = Response()  # dummy response
 
-    with app_without_csrf.flask_app.request_context(env):  # only works if you have app.flask_app
+    with app.flask_app.request_context(env):  # only works if you have app.flask_app
         assert h.set_cache_level(CacheType.PUBLIC, True) is CacheType.PUBLIC
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=3600, s-maxage=1, stale-while-revalidate=0, stale-if-error=86400'
@@ -72,7 +72,7 @@ def test_sets_cache_control_headers_shared_cache_expires(app_without_csrf: CKANT
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.stale_while_revalidates", 1)
 @pytest.mark.ckan_config("ckan.cache.stale_if_error", 2)
-def test_sets_cache_control_headers_stale_config_settings(app_without_csrf: CKANTestApp):
+def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={})
@@ -80,7 +80,7 @@ def test_sets_cache_control_headers_stale_config_settings(app_without_csrf: CKAN
     Request(env)
     response = Response()  # dummy response
 
-    with app_without_csrf.flask_app.request_context(env):  # only works if you have app.flask_app
+    with app.flask_app.request_context(env):  # only works if you have app.flask_app
         assert h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=1, stale-if-error=2'
@@ -90,7 +90,7 @@ def test_sets_cache_control_headers_stale_config_settings(app_without_csrf: CKAN
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.stale-while-revalidate", 0)
 @pytest.mark.ckan_config("ckan.cache.stale_if_error", 0)
-def test_sets_cache_control_headers_stale_config_settings_disable(app_without_csrf: CKANTestApp):
+def test_sets_cache_control_headers_stale_config_settings_disable(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
 
     builder = EnvironBuilder(path='/', method='GET', headers={})
@@ -98,7 +98,7 @@ def test_sets_cache_control_headers_stale_config_settings_disable(app_without_cs
     Request(env)
     response = Response()  # dummy response
 
-    with app_without_csrf.flask_app.request_context(env):  # only works if you have app.flask_app
+    with app.flask_app.request_context(env):  # only works if you have app.flask_app
         assert h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert 'must-understand, public, max-age=3600, s-maxage=7200, must-revalidate' == updated_response.headers['Cache-Control']
@@ -132,14 +132,14 @@ def setSessionCookieHeader(response):
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
-def test_cache_enabled_false_defaults_to_private(app_without_csrf: CKANTestApp):
+def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is allowed with override on max-age."""
     builder = EnvironBuilder(path='/', method='GET')
     env = builder.get_environ()
     Request(env)
     response = Response()  # dummy response
 
-    with app_without_csrf.flask_app.request_context(env):  # only works if you have app.flask_app
+    with app.flask_app.request_context(env):  # only works if you have app.flask_app
         session.accessed = False
         session.modified = False  # CSRF is getting in the way of testing public overrides, disable session for now
         base._allow_caching()
@@ -151,9 +151,9 @@ def test_cache_enabled_false_defaults_to_private(app_without_csrf: CKANTestApp):
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config("ckan.cache.public.enabled", False)
 @pytest.mark.ckan_config("ckan.cache.private.enabled", False)
-def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app_without_csrf: CKANTestApp):
+def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is not allowed."""
-    response = app_without_csrf.get(h.url_for("/"))
+    response = app.get(h.url_for("/"))
     assert 'private, max-age=300, must-revalidate' == response.headers['Cache-Control']
 
 
