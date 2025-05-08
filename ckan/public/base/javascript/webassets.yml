@@ -7,6 +7,7 @@ main:
       - vendor/bootstrap
       - vendor/htmx
   contents:
+    - csrf-token.js
     - apply-html-class.js
     - plugins/jquery.inherit.js
     - plugins/jquery.proxy-all.js
@@ -33,6 +34,7 @@ ckan:
     preload:
       - vendor/bootstrap
   contents:
+    - csrf-token.js
     - modules/select-switch.js
     - modules/slug-preview.js
     - modules/basic-form.js
