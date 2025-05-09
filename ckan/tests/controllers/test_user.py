@@ -4,6 +4,7 @@ import re
 import unittest.mock as mock
 import pytest
 from bs4 import BeautifulSoup
+from werkzeug import Response
 
 import ckan.tests.factories as factories
 import ckan.tests.helpers as helpers
@@ -883,7 +884,7 @@ class TestUserImage(object):
 @pytest.mark.usefixtures("clean_db")
 class TestCSRFToken:
 
-    def setSessionCookieHeader(response):
+    def setSessionCookieHeader(self, response: Response) -> dict:
         match = re.search(r'ckan=([^;]+)', response.headers['set-cookie'])
         if match:
             cookie_value = match.group(0)  # Includes 'ckan=...' part
@@ -907,8 +908,9 @@ class TestCSRFToken:
         assert '<meta name="_csrf_token"' not in response.body
 
         response = app.get(url_for("user.login"))
+        headers = self.setSessionCookieHeader(response)
         # meta is added when the session has csrf token when header is rendered
-        response = app.get(url_for("user.login"), headers=self.setSessionCookieHeader(response))
+        response = app.get(url_for("user.login"), headers=headers)
         assert '<meta name="csrf_field_name"' in response.body
         assert '<meta name="_csrf_token"' in response.body
 
@@ -924,10 +926,11 @@ class TestCSRFToken:
         assert csrf_token.attrs["content"] is not None
 
     @pytest.mark.ckan_config("WTF_CSRF_FIELD_NAME", "new_name")
-    def test_csrf_config_option_contains_values(self, app):
+    def test_csrf_config_option_contains_values(self, app: helpers.CKANTestApp):
         response = app.get(url_for("user.login"))
         # meta is added when the session has csrf token when header is rendered
-        response = app.get(url_for("user.login"), headers=self.setSessionCookieHeader(response))
+        headers = self.setSessionCookieHeader(response)
+        response = app.get(url_for("user.login"), headers=headers)
         res_html = BeautifulSoup(response.data)
 
         csrf_field_name = res_html.select_one("meta[name=csrf_field_name]")
