@@ -40,7 +40,7 @@ def custom_form_fields() -> str:
     )
 
 
-def csrf_input() -> str:
+def csrf_input() -> Response:
     """ Generate a CSRF token and return it in a JSON response for XHR POST requests."""
     return jsonify({
         "name": g.csrf_field_name,

@@ -142,13 +142,13 @@ def set_cache_control_headers_for_response(response: Response) -> Response:
               session_accessed, session.modified, session.keys())
 
     if session_type == 'redis':
-      if not g.__session_was_empty and cache_type != CacheType.SENSITIVE:
-          # Session exists, so can't be public
-          # As session data is in redis, it won't alter its cookie
-          cache_type = CacheType.PRIVATE
-      elif g.__session_was_empty and session.modified:
-         # Redis session created, cookie will be created
-         cache_type = CacheType.SENSITIVE
+        if not g.__session_was_empty and cache_type != CacheType.SENSITIVE:
+            # Session exists, so can't be public
+            # As session data is in redis, it won't alter its cookie
+            cache_type = CacheType.PRIVATE
+        elif g.__session_was_empty and session.modified:
+            # Redis session created, cookie will be created
+            cache_type = CacheType.SENSITIVE
 
     else:
         # Cookie based session handling

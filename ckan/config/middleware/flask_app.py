@@ -355,7 +355,8 @@ def ckan_before_request() -> Optional[Response]:
     g.__timer = time.time()
 
     session_access = session.accessed
-    g.__session_was_empty = len(session) == 0  # used to mimic session.new since flask_session new can lie
+    # used to mimic session.new since flask_session new can lie
+    g.__session_was_empty = len(session.keys()) == 0
     session.accessed = session_access  # reset session accessed state
 
     # Update app_globals
