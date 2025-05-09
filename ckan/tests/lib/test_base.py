@@ -451,7 +451,7 @@ def test_cache_control_in_when_public_cache_is_not_enabled(app: CKANTestApp):
 
     assert 'Cache-Control' in response.headers
     assert 'Set-Cookie' not in response.headers
-    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate'
+    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, stale-while-revalidate=0, stale-if-error=86400'
 
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)

@@ -152,7 +152,7 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
         base._allow_caching()
         assert h.cache_level() == CacheType.PRIVATE
         updated_response = views.set_cache_control_headers_for_response(response)
-    assert 'private, max-age=300, must-revalidate' == updated_response.headers['Cache-Control']
+    assert 'must-understand, private, max-age=60, stale-while-revalidate=0, stale-if-error=86400' == updated_response.headers['Cache-Control']
 
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
@@ -161,7 +161,7 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
 def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is not allowed."""
     response = app.get(h.url_for("/"))
-    assert 'must-understand, private, max-age=60, stale-while-revalidate=0, stale-if-error=86400' == response.headers['Cache-Control']
+    assert 'must-understand, no-cache, max-age=0' == response.headers['Cache-Control']
 
 
 # Vary testing
