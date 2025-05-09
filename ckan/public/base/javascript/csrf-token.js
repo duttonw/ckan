@@ -1,6 +1,7 @@
+(function (ckan) {
 /* This script collects csrf token for xhr requests, also set meta tags if not found
  */
-this.ckan.module('csrfToken', function () {
+ckan.module('csrfToken', function () {
 function getCsrfMetaToken() {
   var csrfFieldMeta = document.querySelector('meta[name="csrf_field_name"]');
   if (!csrfFieldMeta) return null;
@@ -50,3 +51,5 @@ return {
 };
 
 });
+
+})(this.ckan);

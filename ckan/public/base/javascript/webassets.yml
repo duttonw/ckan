@@ -7,7 +7,6 @@ main:
       - vendor/bootstrap
       - vendor/htmx
   contents:
-    - csrf-token.js
     - apply-html-class.js
     - plugins/jquery.inherit.js
     - plugins/jquery.proxy-all.js
@@ -21,6 +20,7 @@ main:
     - sandbox.js
     - module.js
     - pubsub.js
+    - csrf-token.js
     - client.js
     - i18n.js
     - notify.js
