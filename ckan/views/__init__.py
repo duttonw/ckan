@@ -166,6 +166,8 @@ def set_cache_control_headers_for_response(response: Response) -> Response:
             cache_type = CacheType.SENSITIVE
 
     log.error("chacheType = %r", cache_type)
+    log.error("session keys %r", session.keys())
+    log.error("session %r", session)
 
     if cache_type == CacheType.PUBLIC:
         response.cache_control.public = True
