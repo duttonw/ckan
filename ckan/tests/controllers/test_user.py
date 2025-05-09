@@ -1,6 +1,5 @@
 # encoding: utf-8
 import json
-import re
 import unittest.mock as mock
 import pytest
 from bs4 import BeautifulSoup
@@ -882,16 +881,14 @@ class TestUserImage(object):
 
 
 @pytest.mark.usefixtures("clean_db")
+# @pytest.mark.ckan_config("WTF_CSRF_ENABLED", "true")
 class TestCSRFToken:
 
     def setSessionCookieHeader(self, response: Response) -> dict:
-        match = re.search(r'ckan=([^;]+)', response.headers['set-cookie'])
-        if match:
-            cookie_value = match.group(0)  # Includes 'ckan=...' part
-            headers = {"Cookie": cookie_value}
-
+        if 'Set-Cookie' in response.headers:
+            headers = {"Cookie": response.headers['Set-Cookie']}
         else:
-            pytest.fail("Not CKAN cookie found in Set-Cookie header")
+            pytest.fail("Not cookies found in Set-Cookie header")
         return headers
 
     def test_csrf_token_get_rest_endpoint(self, app: helpers.CKANTestApp):
@@ -916,18 +913,29 @@ class TestCSRFToken:
 
     def test_csrf_tags_contains_values(self, app):
         response = app.get(url_for("user.login"))
+        res_html = BeautifulSoup(response.data)
+        csrf_input_token = res_html.select_one("input[type='hidden' and name='_csrf_token']")
+        assert csrf_input_token.attrs["value"] is not None
+        csrf_value = csrf_input_token.attrs["value"]
+
         # meta is added when the session has csrf token when header is rendered
         response = app.get(url_for("user.login"), headers=self.setSessionCookieHeader(response))
         res_html = BeautifulSoup(response.data)
         # Using the same selector as CKAN client.js
         csrf_field_name = res_html.select_one("meta[name=csrf_field_name]")
-        assert csrf_field_name.attrs["content"] == "_csrf_token"
+        assert csrf_field_name.attrs["content"] == "_csrf_token", res_html
         csrf_token = res_html.select_one("meta[name=_csrf_token]")
-        assert csrf_token.attrs["content"] is not None
+        assert csrf_token.attrs["content"] == csrf_value, res_html
 
     @pytest.mark.ckan_config("WTF_CSRF_FIELD_NAME", "new_name")
     def test_csrf_config_option_contains_values(self, app: helpers.CKANTestApp):
         response = app.get(url_for("user.login"))
+
+        res_html = BeautifulSoup(response.data)
+        csrf_input_token = res_html.select_one("input[type='hidden' and name='new_name']")
+        assert csrf_input_token.attrs["value"] is not None
+        csrf_value = csrf_input_token.attrs["value"]
+
         # meta is added when the session has csrf token when header is rendered
         headers = self.setSessionCookieHeader(response)
         response = app.get(url_for("user.login"), headers=headers)
@@ -936,7 +944,7 @@ class TestCSRFToken:
         csrf_field_name = res_html.select_one("meta[name=csrf_field_name]")
         assert csrf_field_name.attrs["content"] == "new_name"
         csrf_token = res_html.select_one("meta[name=new_name]")
-        assert csrf_token.attrs["content"] is not None
+        assert csrf_token.attrs["content"] == csrf_value, response
 
     def test_csrf_token_in_g_object(self, app):
         password = "RandomPassword123"

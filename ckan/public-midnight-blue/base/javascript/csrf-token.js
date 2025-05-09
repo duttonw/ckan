@@ -1,6 +1,5 @@
 (function (ckan) {
-  /* This script collects csrf token for xhr requests, also set meta tags if not found
-   */
+  /* This script collects csrf token for xhr requests, also set meta tags if not found */
   function getCsrfMetaToken() {
     var csrfFieldMeta = document.querySelector('meta[name="csrf_field_name"]');
     if (!csrfFieldMeta) return null;
@@ -27,10 +26,13 @@
 
             var head = document.head;
 
-            var metaField = document.createElement('meta');
-            metaField.name = 'csrf_field_name';
-            metaField.content = data.name;
-            head.appendChild(metaField);
+            var csrfFieldMeta = document.querySelector('meta[name="csrf_field_name"]');
+            if (!csrfFieldMeta) {
+              var metaField = document.createElement('meta');
+              metaField.name = 'csrf_field_name';
+              metaField.content = data.name;
+              head.appendChild(metaField);
+            }
 
             var metaToken = document.createElement('meta');
             metaToken.name = data.name;
