@@ -3,7 +3,7 @@ import re
 
 from flask import Request, Response
 from werkzeug.test import EnvironBuilder
-from ckan.common import request, CacheType, session
+from ckan.common import request, CacheType, session, g
 from ckan.lib import helpers as h, base
 
 from ckan.tests.helpers import CKANTestApp
@@ -29,6 +29,7 @@ def test_sets_cache_control_headers_default(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = True
         h.set_cache_level(CacheType.PUBLIC)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400' ==
@@ -46,6 +47,7 @@ def test_sets_cache_control_headers_cache_expires(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = True
         h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=0, stale-if-error=86400'
@@ -63,6 +65,7 @@ def test_sets_cache_control_headers_shared_cache_expires(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = True
         assert h.set_cache_level(CacheType.PUBLIC, True) is CacheType.PUBLIC
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=3600, s-maxage=1, stale-while-revalidate=0, stale-if-error=86400'
@@ -81,6 +84,7 @@ def test_sets_cache_control_headers_stale_config_settings(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = True
         assert h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert ('must-understand, public, max-age=3600, s-maxage=7200, stale-while-revalidate=1, stale-if-error=2'
@@ -99,6 +103,7 @@ def test_sets_cache_control_headers_stale_config_settings_disable(app: CKANTestA
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = True
         assert h.set_cache_level(CacheType.PUBLIC, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert 'must-understand, public, max-age=3600, s-maxage=7200, must-revalidate' == updated_response.headers['Cache-Control']
@@ -114,6 +119,7 @@ def test_sets_cache_control_headers_private_cache_expires(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = False
         assert h.set_cache_level(CacheType.PRIVATE, True)
         updated_response = views.set_cache_control_headers_for_response(response)
     assert 'must-understand, private, max-age=1234, stale-while-revalidate=0, stale-if-error=86400' == updated_response.headers['Cache-Control']
@@ -140,6 +146,7 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = True
         session.accessed = False
         session.modified = False  # CSRF is getting in the way of testing public overrides, disable session for now
         base._allow_caching()
@@ -168,6 +175,7 @@ def test_adds_vary_cookie_when_limit_cache_by_cookie_is_present(app: CKANTestApp
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = True
         assert request.environ.get('__limit_cache_by_cookie__') is True
         updated_response = views.set_cache_control_headers_for_response(response)
     assert "Cookie" in updated_response.vary
@@ -183,6 +191,7 @@ def test_adds_vary_cookie_when_g_limit_cache_for_page_is_true(app: CKANTestApp):
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
         with app.flask_app.app_context() as ctx:
+            g.__session_was_empty = True
             assert request.environ.get('__limit_cache_by_cookie__') is None
             base._allow_caching()
             assert ctx.g.limit_cache_for_page is True
@@ -200,6 +209,7 @@ def test_removes_pragma_header_if_present(app: CKANTestApp):
     response = Response()  # dummy response
 
     with app.flask_app.request_context(env):  # only works if you have app.flask_app
+        g.__session_was_empty = True
         response.headers["Pragma"] = "no-cache"
         # recall for under test altered response
         updated_response = views.set_cache_control_headers_for_response(response)

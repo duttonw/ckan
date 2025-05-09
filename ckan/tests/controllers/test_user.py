@@ -1,4 +1,5 @@
 # encoding: utf-8
+import json
 import unittest.mock as mock
 import pytest
 from bs4 import BeautifulSoup
@@ -880,13 +881,25 @@ class TestUserImage(object):
 
 @pytest.mark.usefixtures("clean_db")
 class TestCSRFToken:
+    def test_csrf_token_get_rest_endpoint(self, app):
+        response = app.get(url_for("util.csrf_input"))
+        csrf_object = json.loads(response)
+        assert 'name' in csrf_object
+        assert 'value' in csrf_object
+        assert csrf_object["name"] == '_csrf_token'
+        assert csrf_object["value"] is not None
+
     def test_csrf_token_tags_get_render(self, app):
         response = app.get(url_for("home.index"))
+        assert '<meta name="csrf_field_name"' not in response.body
+        assert '<meta name="_csrf_token"' not in response.body
+
+        response = app.get(url_for("user.login"))
         assert '<meta name="csrf_field_name"' in response.body
         assert '<meta name="_csrf_token"' in response.body
 
     def test_csrf_tags_contains_values(self, app):
-        response = app.get(url_for("home.index"))
+        response = app.get(url_for("user.login"))
         res_html = BeautifulSoup(response.data)
         # Using the same selector as CKAN client.js
         csrf_field_name = res_html.select_one("meta[name=csrf_field_name]")
@@ -896,7 +909,7 @@ class TestCSRFToken:
 
     @pytest.mark.ckan_config("WTF_CSRF_FIELD_NAME", "new_name")
     def test_csrf_config_option_contains_values(self, app):
-        response = app.get(url_for("home.index"))
+        response = app.get(url_for("user.login"))
         res_html = BeautifulSoup(response.data)
 
         csrf_field_name = res_html.select_one("meta[name=csrf_field_name]")
