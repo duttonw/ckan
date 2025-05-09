@@ -49,13 +49,12 @@
         error: error
       };
       if (type === 'POST') {
-        ckan.csrfToken.fetchAndSetCsrfMetaTag().then(csrf =>
-        {
-        options.type = 'POST';
-        options.data = JSON.stringify(data);
-        options.headers = {
+        ckan.fetchCsrfToken().then(csrf => {
+          options.type = 'POST';
+          options.data = JSON.stringify(data);
+          options.headers = {
             'X-CSRFToken': csrf.token
-        }
+          }
         }).catch((err) => {
           console.error('CSRF token fetch failed:', err);
           if (typeof error === 'function') error(err);

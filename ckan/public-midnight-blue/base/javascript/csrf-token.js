@@ -1,19 +1,18 @@
-/* This script collects csrf token for xhr requests, also set meta tags if not found
- */
-this.ckan.module('csrfToken', function () {
-function getCsrfMetaToken() {
-  var csrfFieldMeta = document.querySelector('meta[name="csrf_field_name"]');
-  if (!csrfFieldMeta) return null;
+(function (ckan) {
+  /* This script collects csrf token for xhr requests, also set meta tags if not found
+   */
+  function getCsrfMetaToken() {
+    var csrfFieldMeta = document.querySelector('meta[name="csrf_field_name"]');
+    if (!csrfFieldMeta) return null;
 
-  var csrfField = csrfFieldMeta.getAttribute('content');
-  var csrfTokenMeta = document.querySelector('meta[name="' + csrfField + '"]');
-  if (!csrfTokenMeta) return null;
+    var csrfField = csrfFieldMeta.getAttribute('content');
+    var csrfTokenMeta = document.querySelector('meta[name="' + csrfField + '"]');
+    if (!csrfTokenMeta) return null;
 
-  return { name: csrfField, token: csrfTokenMeta.getAttribute('content') };
-}
+    return {name: csrfField, token: csrfTokenMeta.getAttribute('content')};
+  }
 
-return {
-  fetchAndSetCsrfMetaTag: function () {
+  function fetchAndSetCsrfMetaTag() {
     return new Promise(function (resolve, reject) {
       var existing = getCsrfMetaToken();
       if (existing) return resolve(existing);
@@ -47,6 +46,7 @@ return {
       xhr.send();
     });
   }
-};
 
-});
+  ckan.fetchCsrfToken = fetchAndSetCsrfMetaTag;
+
+})(this.ckan);
