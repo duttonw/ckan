@@ -150,7 +150,7 @@ def _allow_caching(cache_force: Optional[bool] = None):
 
     # Don't allow private cache if caching is not enabled in config
     if (h.cache_level() == CacheType.PRIVATE
-       and config.get('ckan.cache.private.enabled')):
+       and not config.get('ckan.cache.private.enabled')):
         h.set_cache_level(CacheType.NO_CACHE)
 
 

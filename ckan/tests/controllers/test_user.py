@@ -881,9 +881,9 @@ class TestUserImage(object):
 
 @pytest.mark.usefixtures("clean_db")
 class TestCSRFToken:
-    def test_csrf_token_get_rest_endpoint(self, app):
+    def test_csrf_token_get_rest_endpoint(self, app: helpers.CKANTestApp):
         response = app.get(url_for("util.csrf_input"))
-        csrf_object = json.loads(response)
+        csrf_object = json.loads(response.get_data(as_text=True))
         assert 'name' in csrf_object
         assert 'value' in csrf_object
         assert csrf_object["name"] == '_csrf_token'

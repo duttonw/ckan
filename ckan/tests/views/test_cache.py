@@ -161,7 +161,7 @@ def test_cache_enabled_false_defaults_to_private(app: CKANTestApp):
 def test_cache_enabled_false_private_enabled_false_defaults_to_no_cache(app: CKANTestApp):
     """Test that cache control headers are set correctly when caching is not allowed."""
     response = app.get(h.url_for("/"))
-    assert 'private, max-age=300, must-revalidate' == response.headers['Cache-Control']
+    assert 'must-understand, private, max-age=60, stale-while-revalidate=0, stale-if-error=86400' == response.headers['Cache-Control']
 
 
 # Vary testing
