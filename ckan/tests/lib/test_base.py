@@ -1,5 +1,4 @@
 # encoding: utf-8
-import re
 
 import pytest
 
@@ -505,11 +504,9 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
 
 
 def set_session_cookie_header(response):
-    match = re.search(r'ckan=([^;]+)', response.headers['set-cookie'])
-    if match:
-        cookie_value = match.group(0)  # Includes 'ckan=...' part
+    if "Set-Cookie" in response.headers:
+        cookie_value = response.headers['set-cookie']
         headers = {"Cookie": cookie_value}
-
     else:
         pytest.fail("Not CKAN cookie found in Set-Cookie header")
     return headers

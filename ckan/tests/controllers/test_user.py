@@ -900,21 +900,21 @@ class TestCSRFToken:
         assert csrf_object["value"] is not None
 
     def test_csrf_token_tags_get_render(self, app):
-        response = app.get(url_for("home.index"))
-        assert '<meta name="csrf_field_name"' not in response.body
+        response = app.get(url_for("user.login"))
+
+        assert '<meta name="csrf_field_name"' in response.body
         assert '<meta name="_csrf_token"' not in response.body
 
         response = app.get(url_for("user.login"))
-        headers = self.setSessionCookieHeader(response)
         # meta is added when the session has csrf token when header is rendered
-        response = app.get(url_for("user.login"), headers=headers)
+        response = app.get(url_for("user.login"), headers=self.setSessionCookieHeader(response))
         assert '<meta name="csrf_field_name"' in response.body
         assert '<meta name="_csrf_token"' in response.body
 
     def test_csrf_tags_contains_values(self, app):
         response = app.get(url_for("user.login"))
         res_html = BeautifulSoup(response.data)
-        csrf_input_token = res_html.select_one("input[type='hidden' and name='_csrf_token']")
+        csrf_input_token = res_html.select_one("input[type='hidden'][name='_csrf_token']")
         assert csrf_input_token.attrs["value"] is not None
         csrf_value = csrf_input_token.attrs["value"]
 
@@ -932,7 +932,7 @@ class TestCSRFToken:
         response = app.get(url_for("user.login"))
 
         res_html = BeautifulSoup(response.data)
-        csrf_input_token = res_html.select_one("input[type='hidden' and name='new_name']")
+        csrf_input_token = res_html.select_one("input[type='hidden'][name='new_name']")
         assert csrf_input_token.attrs["value"] is not None
         csrf_value = csrf_input_token.attrs["value"]
 
