@@ -881,7 +881,7 @@ class TestUserImage(object):
 
 
 @pytest.mark.usefixtures("clean_db")
-# @pytest.mark.ckan_config("WTF_CSRF_ENABLED", "true")
+@pytest.mark.ckan_config("WTF_CSRF_ENABLED", "true")
 class TestCSRFToken:
 
     def setSessionCookieHeader(self, response: Response) -> dict:
@@ -907,8 +907,10 @@ class TestCSRFToken:
 
         response = app.get(url_for("user.login"))
         # meta is added when the session has csrf token when header is rendered
+        assert 'abc' in response.headers.keys()
         response = app.get(url_for("user.login"), headers=self.setSessionCookieHeader(response))
-        assert '<meta name="csrf_field_name"' in response.body
+        assert 'abc' in response.headers.keys()
+        assert '<meta name="csrf_field_name" content="_csrf_token" />' in response.body
         assert '<meta name="_csrf_token"' in response.body
 
     def test_csrf_tags_contains_values(self, app):
