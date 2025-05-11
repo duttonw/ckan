@@ -495,7 +495,7 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
     assert 'Set-Cookie' in response.headers.keys()
     headers = set_session_cookie_header(response)
 
-    response = app.get(h.url_for("dashboard.groups"), headers=headers)
+    response = app.get(h.url_for("home.index"), headers=headers)
     assert 'Set-Cookie' not in response.headers.keys()
 
     assert 'Cache-Control' in response.headers
