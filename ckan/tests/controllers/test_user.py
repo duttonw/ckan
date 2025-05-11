@@ -8,6 +8,7 @@ from werkzeug import Response
 import ckan.tests.factories as factories
 import ckan.tests.helpers as helpers
 from ckan import model
+from ckan.common import session
 from ckan.lib.helpers import url_for
 from ckan.lib.mailer import create_reset_key, MailerException
 
@@ -907,9 +908,10 @@ class TestCSRFToken:
 
         response = app.get(url_for("user.login"))
         # meta is added when the session has csrf token when header is rendered
-        assert 'abc' in response.headers.keys()
+        assert 'Set-Cookie' in response.headers.keys()
         response = app.get(url_for("user.login"), headers=self.setSessionCookieHeader(response))
-        assert 'abc' in response.headers.keys()
+        assert 'Set-Cookie' not in response.headers.keys()
+        assert '_csrf_token' in session
         assert '<meta name="csrf_field_name" content="_csrf_token" />' in response.body
         assert '<meta name="_csrf_token"' in response.body
 

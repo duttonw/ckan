@@ -492,13 +492,12 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, no-cache, max-age=0, no-store'
 
-    assert 'abc' in response.headers.keys()
+    assert 'Set-Cookie' in response.headers.keys()
     headers = set_session_cookie_header(response)
 
     response = app.get(h.url_for("dashboard.groups"), headers=headers)
-    headers = set_session_cookie_header(response)
+    assert 'Set-Cookie' not in response.headers.keys()
 
-    response = app.get(h.url_for("dashboard.groups"), headers=headers)
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate', (
         response.headers.keys())
