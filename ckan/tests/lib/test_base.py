@@ -483,20 +483,21 @@ def test_cache_control_max_age_when_cache_enabled(app: CKANTestApp):
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
 def test_cache_control_while_logged_in(app: CKANTestApp):
-    user = factories.User(password="correct123")
+    user = factories.User(fullname="Logged-In-User", password="correct123")
     identity = {"login": user["name"], "password": "correct123"}
     request_headers = {}
 
     response = app.post(
         h.url_for("user.login"), data=identity, headers=request_headers
     )
+    assert "Logged-In-User" in response.get_data(as_text=True)
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, no-cache, max-age=0, no-store'
 
     assert 'Set-Cookie' in response.headers.keys()
     response = app.get(h.url_for("home.index"), headers=set_session_cookie_header(response))
     assert 'Set-Cookie' not in response.headers.keys()
-
+    assert "Logged-In-User" in response.get_data(as_text=True)
     assert 'Cache-Control' in response.headers
     assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate', (
         response.headers.keys())
