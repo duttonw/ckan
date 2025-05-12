@@ -2,7 +2,6 @@
 import json
 
 import pytest
-from werkzeug.datastructures import Headers
 
 import ckan.tests.factories as factories
 import ckan.lib.helpers as h
@@ -490,7 +489,7 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
     client = app.test_client()
     user = factories.User(fullname="Logged-In-User", password="correct123")
 
-    #get csrf input token via rest endpoint (also sets session cookie)
+    # get csrf input token via rest endpoint (also sets session cookie)
     csrf_object = json.loads(client.get(h.url_for("util.csrf_input")).get_data(as_text=True))
 
     identity = {"login": user["name"], "password": "correct123", csrf_object["name"]: csrf_object["value"]}
