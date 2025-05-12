@@ -3,12 +3,10 @@ import json
 import unittest.mock as mock
 import pytest
 from bs4 import BeautifulSoup
-from werkzeug.datastructures import Headers
 
 import ckan.tests.factories as factories
 import ckan.tests.helpers as helpers
 from ckan import model
-from ckan.common import session
 from ckan.lib.helpers import url_for
 from ckan.lib.mailer import create_reset_key, MailerException
 
@@ -883,10 +881,6 @@ class TestUserImage(object):
 
 
 @pytest.mark.usefixtures("clean_db")
-@pytest.mark.ckan_config("WTF_CSRF_ENABLED", "true")
-@pytest.mark.ckan_config("debug.remote", "true")
-@pytest.mark.ckan_config("ckan.plugins", "pycharm_debugger")
-@pytest.mark.ckan_config("ckan.site_url", "http://test.ckan.net")
 class TestCSRFToken:
 
     # def set_session_cookie_header(self, app: helpers.CKANTestApp, response) -> helpers.CKANTestClient:

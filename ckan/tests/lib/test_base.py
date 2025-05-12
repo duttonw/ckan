@@ -1,4 +1,5 @@
 # encoding: utf-8
+import json
 
 import pytest
 from werkzeug.datastructures import Headers
@@ -482,35 +483,33 @@ def test_cache_control_max_age_when_cache_enabled(app: CKANTestApp):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
+@pytest.mark.ckan_config("debug.remote", "true")
+@pytest.mark.ckan_config("ckan.plugins", "pycharm_debugger")
 def test_cache_control_while_logged_in(app: CKANTestApp):
+    # Collect client, so cookies persist for session
+    client = app.test_client()
     user = factories.User(fullname="Logged-In-User", password="correct123")
-    identity = {"login": user["name"], "password": "correct123"}
-    request_headers = {}
 
-    response = app.post(
-        h.url_for("user.login"), data=identity, headers=request_headers
-    )
+    #get csrf input token via rest endpoint (also sets session cookie)
+    csrf_object = json.loads(client.get(h.url_for("util.csrf_input")).get_data(as_text=True))
+
+    identity = {"login": user["name"], "password": "correct123", csrf_object["name"]: csrf_object["value"]}
+    response = client.post(h.url_for("user.login"), data=identity)
+
+    # Verify we did log in
     assert "Logged-In-User" in response.get_data(as_text=True)
-    assert 'Cache-Control' in response.headers
-    assert response.headers['Cache-Control'] == 'must-understand, no-cache, max-age=0, no-store'
 
-    assert 'Set-Cookie' in response.headers.keys()
-    response = app.get(h.url_for("home.index"), headers=set_session_cookie_header(response))
+    # test client is too helpful and will automatically follow redirects for us,
+    # need to look up response history for 302 header checks
+    assert len(response.history) == 1
+    assert 'Cache-Control' in response.history[0].headers
+    assert response.history[0].headers['Cache-Control'] == 'must-understand, no-cache, max-age=0, no-store'
+    assert 'Set-Cookie' in response.history[0].headers.keys()
+
+    # Now test the page we were redirected to
     assert 'Set-Cookie' not in response.headers.keys()
-    assert "Logged-In-User" in response.get_data(as_text=True)
     assert 'Cache-Control' in response.headers
-    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, must-revalidate', (
-        response.headers.keys())
-
-
-def set_session_cookie_header(response) -> Headers:
-    if "Set-Cookie" in response.headers:
-        cookie_value = response.headers['set-cookie']
-        headers = Headers()
-        headers.add("Cookie", cookie_value)
-    else:
-        pytest.fail("Not CKAN cookie found in Set-Cookie header")
-    return headers
+    assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, stale-while-revalidate=0, stale-if-error=86400'
 
 
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
