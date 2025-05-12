@@ -31,7 +31,6 @@ import smtplib
 from io import BytesIO
 from typing import Any, IO
 import copy
-from unittest.mock import MagicMock
 
 import pytest
 import rq

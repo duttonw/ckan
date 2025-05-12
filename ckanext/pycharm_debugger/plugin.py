@@ -37,7 +37,8 @@ class PycharmDebugger(p.SingletonPlugin):
             # We don't yet have a translator, so messages will be in english only.
             log.info("Initiating remote debugging session to %s:%s", host_ip, host_port)
             try:
-                import pydevd_pycharm
+                # Not imported on standard build
+                import pydevd_pycharm  # pyright: ignore
                 pydevd_pycharm.settrace(host_ip, port=int(host_port),
                                         stdoutToServer=stdout,
                                         stderrToServer=stderr,
