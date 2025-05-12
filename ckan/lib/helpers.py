@@ -29,7 +29,7 @@ from typing import (
 import dominate.tags as dom_tags
 from markdown import markdown
 from bleach import clean as bleach_clean, ALLOWED_TAGS, ALLOWED_ATTRIBUTES
-from ckan.common import asbool, config, current_user
+from ckan.common import asbool, config, current_user, CacheType, session
 from flask import flash, has_request_context
 from flask import get_flashed_messages as _flask_get_flashed_messages
 from flask import redirect as _flask_redirect
@@ -973,9 +973,9 @@ def map_pylons_to_flask_route_name(menu_item: str):
             LEGACY_ROUTE_NAMES.update(mappings)
 
     if menu_item in LEGACY_ROUTE_NAMES:
-        log.info('Route name "{}" is deprecated and will be removed. '
-                 'Please update calls to use "{}" instead'
-                 .format(menu_item, LEGACY_ROUTE_NAMES[menu_item]))
+        log.info('Route name "%s" is deprecated and will be removed. '
+                 'Please update calls to use "%s" instead',
+                 menu_item, LEGACY_ROUTE_NAMES[menu_item])
     return LEGACY_ROUTE_NAMES.get(menu_item, menu_item)
 
 
@@ -1077,10 +1077,10 @@ def humanize_entity_type(entity_type: str, object_type: str,
         `my label`: "My [object]s" tab in dashboard
         `name placeholder`: "<[object]>" section of URL preview on object form
         `no any objects`: No objects created yet
-        `no associated label`: no gorups for dataset
+        `no associated label`: no groups for dataset
         `no description`: object has no description
         `no label`: package with no organization
-        `page title`: "Title - [objec]s - CKAN" section of page title
+        `page title`: "Title - [object]s - CKAN" section of page title
         `save label`: "Save [object]" button
         `search placeholder`: "Search [object]s..." placeholder
         `update label`: "Update [object]" button
@@ -1856,7 +1856,7 @@ def convert_to_dict(object_type: str, objs: list[Any]) -> list[dict[str, Any]]:
     converters = {'package': md.package_dictize}
     converter = converters[object_type]
     items = []
-    context: Context = {'model': model}
+    context: Context = {}
     for obj in objs:
         item = converter(obj, context)
         items.append(item)
@@ -2891,3 +2891,74 @@ def make_login_url(
 @core_helper
 def csrf_input():
     return snippet('snippets/csrf_input.html')
+
+
+@core_helper
+def csrf_session_enabled() -> bool:
+    """ Returns true if the session is enabled for CSRF protection """
+    log.debug("WTF_CSRF_FIELD_NAME: %r", config.get('WTF_CSRF_FIELD_NAME'))
+    log.debug("session: %r", session)
+
+    return config.get('WTF_CSRF_FIELD_NAME') in session
+
+
+@core_helper
+def cache_level():
+    return getattr(g, 'cache_type', None)
+
+
+@core_helper
+def limit_cache_for_page() -> Optional[bool]:
+    return getattr(g, 'limit_cache_for_page', None)
+
+
+@core_helper
+def set_limit_cache_for_page(limit: bool) -> None:
+    g.limit_cache_for_page = limit
+
+
+@core_helper
+def set_cache_level(cache_type: 'CacheType|str',
+                    force: bool = False) -> Optional[CacheType]:
+    """Allow setting the cache without downgrading cache unless forced
+    force: Use with caution for example, downgrading cache to public
+    when logged in can have major side effects"""
+    if isinstance(cache_type, str):
+        try:
+            cache_type = CacheType(cache_type)
+        except ValueError:
+            log.warning("Invalid Cache Type passed in, received %r. Ignoring",
+                        cache_type)
+            return None
+
+    currentCacheType = cache_level()
+
+    if currentCacheType and cache_type:
+        if CacheType.can_override(currentCacheType, cache_type) or force:
+            g.cache_type = cache_type
+    else:
+        g.cache_type = cache_type
+    # log.debug('cacheType set to %r', cache_type)
+    return g.cache_type
+
+
+@core_helper
+def etag_append(append_value: str) -> None:
+    """ Adds additional etag uniqueness, can be called multiple times"""
+    current_value = getattr(g, 'etag_append', "")
+    g.etag_append = current_value + append_value
+
+
+@core_helper
+def set_etag_replace(etag_replace: str) -> None:
+    """ Replace etag with this value, disable etag generation
+    will not append set suffix's or prefix's"""
+    g.etag_replace = etag_replace
+
+
+@core_helper
+def set_etag_modified_time(etag_modified_time: str) -> None:
+    """ Set modified time value on etag instead of current datetime of request.
+    Very useful if you want to key a page to db last modified where
+    other plugins provide their uniqueness constraint via etag_append(str)"""
+    g.etag_modified_time = etag_modified_time
