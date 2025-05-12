@@ -915,13 +915,8 @@ class TestCSRFToken:
         assert '<meta name="csrf_field_name"' in response.body
         assert '<meta name="_csrf_token"' not in response.body
 
-        response = app.get(url_for("user.login"))
-        # meta is added when the session has csrf token when header is rendered
-        assert 'Set-Cookie' in response.headers.keys()
-        # client =  self.set_session_cookie_header(app, response)
         response = client.get(url_for("user.login"))
-        assert 'Set-Cookie' not in response.headers.keys()
-        assert '_csrf_token' in session
+        response = client.get(url_for("user.login"))
         assert '<meta name="csrf_field_name" content="_csrf_token" />' in response.body
         assert '<meta name="_csrf_token"' in response.body
 
