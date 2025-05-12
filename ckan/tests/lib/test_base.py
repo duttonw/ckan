@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import pytest
+from werkzeug.datastructures import Headers
 
 import ckan.tests.factories as factories
 import ckan.lib.helpers as h
@@ -493,9 +494,7 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
     assert response.headers['Cache-Control'] == 'must-understand, no-cache, max-age=0, no-store'
 
     assert 'Set-Cookie' in response.headers.keys()
-    headers = set_session_cookie_header(response)
-
-    response = app.get(h.url_for("home.index"), headers=headers)
+    response = app.get(h.url_for("home.index"), headers=set_session_cookie_header(response))
     assert 'Set-Cookie' not in response.headers.keys()
 
     assert 'Cache-Control' in response.headers
@@ -503,10 +502,11 @@ def test_cache_control_while_logged_in(app: CKANTestApp):
         response.headers.keys())
 
 
-def set_session_cookie_header(response):
+def set_session_cookie_header(response) -> Headers:
     if "Set-Cookie" in response.headers:
         cookie_value = response.headers['set-cookie']
-        headers = {"Cookie": cookie_value}
+        headers = Headers()
+        headers.add("Cookie", cookie_value)
     else:
         pytest.fail("Not CKAN cookie found in Set-Cookie header")
     return headers

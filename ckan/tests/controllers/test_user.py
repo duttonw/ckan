@@ -4,6 +4,7 @@ import unittest.mock as mock
 import pytest
 from bs4 import BeautifulSoup
 from werkzeug import Response
+from werkzeug.datastructures import Headers
 
 import ckan.tests.factories as factories
 import ckan.tests.helpers as helpers
@@ -885,11 +886,13 @@ class TestUserImage(object):
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", "true")
 class TestCSRFToken:
 
-    def setSessionCookieHeader(self, response: Response) -> dict:
-        if 'Set-Cookie' in response.headers:
-            headers = {"Cookie": response.headers['Set-Cookie']}
+    def set_session_cookie_header(self, response) -> Headers:
+        if "Set-Cookie" in response.headers:
+            cookie_value = response.headers['set-cookie']
+            headers = Headers()
+            headers.add("Cookie", cookie_value)
         else:
-            pytest.fail("Not cookies found in Set-Cookie header")
+            pytest.fail("Not CKAN cookie found in Set-Cookie header")
         return headers
 
     def test_csrf_token_get_rest_endpoint(self, app: helpers.CKANTestApp):
