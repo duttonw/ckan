@@ -442,6 +442,7 @@ def test_cors_config_origin_allow_all_false_with_whitelist_not_containing_origin
     assert "Access-Control-Allow-Headers" not in response_headers
 
 
+# Disable CSRF so we have a known session state
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config('ckan.cache.public.enabled', False)
 @pytest.mark.ckan_config('ckan.cache.private.enabled', True)
@@ -454,6 +455,7 @@ def test_cache_control_in_when_public_cache_is_not_enabled(app: CKANTestApp):
     assert response.headers['Cache-Control'] == 'must-understand, private, max-age=60, stale-while-revalidate=0, stale-if-error=86400'
 
 
+# Disable CSRF so we have a known session state
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config('ckan.cache.public.enabled', True)
 def test_cache_control_when_cache_enabled(app: CKANTestApp):
@@ -466,6 +468,7 @@ def test_cache_control_when_cache_enabled(app: CKANTestApp):
             == response.headers['Cache-Control'])
 
 
+# Disable CSRF so we have a known session state
 @pytest.mark.ckan_config("WTF_CSRF_ENABLED", False)
 @pytest.mark.ckan_config('ckan.cache.public.enabled', True)
 @pytest.mark.ckan_config('ckan.cache.expires', 300)
@@ -482,8 +485,6 @@ def test_cache_control_max_age_when_cache_enabled(app: CKANTestApp):
 
 @pytest.mark.ckan_config('ckan.cache.public.enabled', 'true')
 @pytest.mark.ckan_config('ckan.cache.private.enabled', 'true')
-@pytest.mark.ckan_config("debug.remote", "true")
-@pytest.mark.ckan_config("ckan.plugins", "pycharm_debugger")
 def test_cache_control_while_logged_in(app: CKANTestApp):
     # Collect client, so cookies persist for session
     client = app.test_client()

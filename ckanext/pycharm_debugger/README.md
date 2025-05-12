@@ -15,7 +15,7 @@ pydevd-pycharm~=241.18034.82
 ckan.plugins = pycharm_debugger
 debug.remote = True
 ```
-Optionally update remote debugger server ip/host.
+Optionally update remote debugger server ip/host. See plugin.py for more config options
 ```ini
 debug.remote.host.ip = host.docker.internal
 ```
@@ -24,4 +24,9 @@ debug.remote.host.ip = host.docker.internal
 ```bash
   cd test-infrasturcture
   docker compose exec ckan  ckan -c ckan.ini run -H 0.0.0.0
+```
+
+If you wish to use in pytest, place the following above your test class
+```python
+  @pytest.mark.ckan_config(u'ckan.plugins', u'pycharm_debugger')
 ```

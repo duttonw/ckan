@@ -27,7 +27,7 @@ from flask_babel import Babel
 
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
-from ckan.common import CKANConfig, asbool, current_user, session
+from ckan.common import CKANConfig, asbool, session, current_user
 
 import ckan.model as model
 from ckan.lib import base
@@ -58,7 +58,8 @@ from ckan.views import (identify_user,
                         set_etag_for_response,
                         handle_i18n,
                         set_ckan_current_url,
-                        _get_user_for_apitoken, )
+                        _get_user_for_apitoken,
+                        )
 from ckan.types import CKANApp, Config, Response
 
 log = logging.getLogger(__name__)
@@ -228,10 +229,6 @@ def make_flask_stack(conf: Union[Config, CKANConfig]) -> CKANApp:
     app.config["WTF_CSRF_FIELD_NAME"] = config.get('WTF_CSRF_FIELD_NAME')
     app.config['WTF_CSRF_TIME_LIMIT'] = config.get('WTF_CSRF_TIME_LIMIT')
     csrf.init_app(app)
-    # if not config.get('WTF_CSRF_ENABLED', True):
-    #     # Monkey patch the csrf_token generator so session is not altered
-    #     app.jinja_env.globals["csrf_token"] = lambda: "disabled"
-    #     app.context_processor(lambda: {"csrf_token": lambda: "disabled"})
 
     if config.get("ckan.csrf_protection.ignore_extensions"):
         log.warning(csrf_warn_extensions)
@@ -355,7 +352,7 @@ def ckan_before_request() -> Optional[Response]:
     g.__timer = time.time()
 
     session_access = session.accessed
-    # used to mimic session.new since flask_session new can lie
+    # used to mimic session.new since flask_session.new can lie
     g.__session_was_empty = len(session.keys()) == 0
     session.accessed = session_access  # reset session accessed state
 

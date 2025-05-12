@@ -130,7 +130,6 @@ def set_cache_control_headers_for_response(response: Response) -> Response:
             # Only make private, don't override other levels
             cache_type = CacheType.PRIVATE
 
-    session_accessed = session.accessed
     session_type = config.get(u'SESSION_TYPE')
     # If cookie's is changing, don't allow it to be cached/stored
     is_set_cookie_header = u'Set-Cookie' in response.headers
@@ -138,8 +137,8 @@ def set_cache_control_headers_for_response(response: Response) -> Response:
         # If cookie's is changing, don't allow it to be cached/stored
         cache_type = CacheType.SENSITIVE
 
-    log.debug("session accessed: %r modified: %r, keys: %r",
-              session_accessed, session.modified, session.keys())
+    # log.debug("session accessed: %r modified: %r, keys: %r",
+    #           session.accessed, session.modified, session.keys())
 
     if session_type == 'redis':
         if not g.__session_was_empty and cache_type != CacheType.SENSITIVE:
@@ -165,9 +164,9 @@ def set_cache_control_headers_for_response(response: Response) -> Response:
 
             cache_type = CacheType.SENSITIVE
 
-    log.error("chacheType = %r", cache_type)
-    log.error("session keys %r", session.keys())
-    log.error("session %r", session)
+    # log.error("chacheType = %r", cache_type)
+    # log.error("session keys %r", session.keys())
+    # log.error("session %r", session)
 
     if cache_type == CacheType.PUBLIC:
         response.cache_control.public = True

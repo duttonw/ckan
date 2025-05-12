@@ -34,7 +34,6 @@ ckan:
     preload:
       - vendor/bootstrap
   contents:
-    - csrf-token.js
     - modules/select-switch.js
     - modules/slug-preview.js
     - modules/basic-form.js

@@ -190,33 +190,6 @@ def app(make_app):
 
 
 @pytest.fixture
-def disable_csrf(monkeypatch):
-    mock_csrf = MagicMock()  # disable CSRF protection and session usage
-    monkeypatch.setattr("ckan.config.middleware.flask_app.csrf", mock_csrf)
-
-
-def unwrap_flask_app(app):
-    """Recursively unwrap WSGI middleware to get to the Flask app."""
-    while hasattr(app, 'app'):
-        app = app.app
-    return app
-
-
-@pytest.fixture
-def add_fake_csrf_token(app):
-    # app depends on other internal fixtures (e.g. CKAN init)
-    flask_app = unwrap_flask_app(app)
-    flask_app.jinja_env.globals["csrf_token"] = lambda: "fake-token"
-    return app
-
-
-@pytest.fixture
-def app_without_csrf(disable_csrf, add_fake_csrf_token):
-    # monkeypatch then inject jinja prior to use
-    return add_fake_csrf_token
-
-
-@pytest.fixture
 def cli(ckan_config):
     """Provides object for invoking CLI commands from tests.
 

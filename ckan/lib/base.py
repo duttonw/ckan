@@ -119,7 +119,7 @@ def _allow_caching(cache_force: Optional[bool] = None):
             g.limit_cache_for_page = True
 
     if h.cache_level():
-        log.error("Cache Level found: %r, skipping default cache config", h.cache_level)
+        # log.error("Cache Level found: %r, skipping default cache config", h.cache_level)
         return
     else:
         h.set_cache_level(CacheType.PUBLIC)

@@ -12,7 +12,6 @@ from ckan.lib.mailer import create_reset_key, MailerException
 
 
 @pytest.mark.usefixtures("clean_db")
-@pytest.mark.ckan_config(u'ckan.plugins', u'pycharm_debugger')
 class TestUserListings:
     def test_user_page_lists_users(self, app):
         """/users/ lists registered users"""
@@ -882,17 +881,6 @@ class TestUserImage(object):
 
 @pytest.mark.usefixtures("clean_db")
 class TestCSRFToken:
-
-    # def set_session_cookie_header(self, app: helpers.CKANTestApp, response) -> helpers.CKANTestClient:
-    #     if "Set-Cookie" in response.headers:
-    #         cookie_value = response.headers['set-cookie'].split(";")[0]
-    #         # Flask test client, uses app.set_cookie, not header dict cookies for session, must match hostname too
-    #         client = app.test_client()
-    #         client.set_cookie(cookie_value.split("=")[0], cookie_value.split("=")[1])
-    #         return client
-    #     else:
-    #         pytest.fail("Not CKAN cookie found in Set-Cookie header")
-
     def test_csrf_token_get_rest_endpoint(self, app: helpers.CKANTestApp):
         response = app.get(url_for("util.csrf_input"))
         csrf_object = json.loads(response.get_data(as_text=True))
@@ -927,9 +915,9 @@ class TestCSRFToken:
         res_html = BeautifulSoup(response.data)
         # Using the same selector as CKAN client.js
         csrf_field_name = res_html.select_one("meta[name=csrf_field_name]")
-        assert csrf_field_name.attrs["content"] == "_csrf_token", res_html
+        assert csrf_field_name.attrs["content"] == "_csrf_token"
         csrf_token = res_html.select_one("meta[name=_csrf_token]")
-        assert csrf_token.attrs["content"] == csrf_value, res_html
+        assert csrf_token.attrs["content"] == csrf_value
 
     @pytest.mark.ckan_config("WTF_CSRF_FIELD_NAME", "new_name")
     def test_csrf_config_option_contains_values(self, app: helpers.CKANTestApp):
@@ -948,7 +936,7 @@ class TestCSRFToken:
         csrf_field_name = res_html.select_one("meta[name=csrf_field_name]")
         assert csrf_field_name.attrs["content"] == "new_name"
         csrf_token = res_html.select_one("meta[name=new_name]")
-        assert csrf_token.attrs["content"] == csrf_value, response
+        assert csrf_token.attrs["content"] == csrf_value
 
     def test_csrf_token_in_g_object(self, app):
         password = "RandomPassword123"
