@@ -27,7 +27,7 @@ pysolr==3.10.0
 python-dateutil==2.9.0.post0
 pytz
 pyyaml==6.0.2
-requests==2.32.3
+requests==2.32.4
 rq==2.0.0
 simplejson==3.19.3
 SQLAlchemy==2.0.37
