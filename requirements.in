@@ -31,7 +31,7 @@ requests==2.32.3
 rq==2.0.0
 simplejson==3.19.3
 SQLAlchemy==2.0.37
-sqlparse==0.5.3
+sqlparse==0.5.4
 typing_extensions==4.12.2
 tzlocal==5.2
 webassets==2.0
